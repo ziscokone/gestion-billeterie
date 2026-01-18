@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}{% if object %}Modifier{% else %}Nouvel{% endif %} Utilisateur{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{% if object %}Modifier l'utilisateur{% else %}Nouvel utilisateur{% endif %}</h2>
+        <a href="{% url 'personnel:utilisateur_list' %}" class="btn btn-danger text-white fw-bold"><i class="bi bi-arrow-left"></i> Retour</a>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">Nom d'utilisateur <span class="text-danger">*</span></label>
+                        {{ form.username }}
+                        {% if form.username.help_text %}<div class="form-text">{{ form.username.help_text }}</div>{% endif %}
+                        {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.nom_complet.id_for_label }}" class="form-label">Nom complet <span class="text-danger">*</span></label>
+                        {{ form.nom_complet }}
+                        {% if form.nom_complet.errors %}<div class="text-danger small">{{ form.nom_complet.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.password1.id_for_label }}" class="form-label">Mot de passe {% if not object %}<span class="text-danger">*</span>{% endif %}</label>
+                        {{ form.password1 }}
+                        {% if form.password1.help_text %}<div class="form-text">{{ form.password1.help_text }}</div>{% endif %}
+                        {% if form.password1.errors %}<div class="text-danger small">{{ form.password1.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirmation {% if not object %}<span class="text-danger">*</span>{% endif %}</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.telephone.id_for_label }}" class="form-label">Téléphone</label>
+                        {{ form.telephone }}
+                        {% if form.telephone.errors %}<div class="text-danger small">{{ form.telephone.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.role.id_for_label }}" class="form-label">Rôle <span class="text-danger">*</span></label>
+                        {{ form.role }}
+                        {% if form.role.errors %}<div class="text-danger small">{{ form.role.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.gare.id_for_label }}" class="form-label">Gare</label>
+                        {{ form.gare }}
+                        {% if form.gare.help_text %}<div class="form-text">{{ form.gare.help_text }}</div>{% endif %}
+                        {% if form.gare.errors %}<div class="text-danger small">{{ form.gare.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3 d-flex align-items-center pt-4">
+                        <div class="form-check">
+                            {{ form.actif }}
+                            <label class="form-check-label" for="{{ form.actif.id_for_label }}">Utilisateur actif</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> {% if object %}Enregistrer{% else %}Créer{% endif %}</button>
+                    <a href="{% url 'personnel:utilisateur_list' %}" class="btn btn-outline-secondary">Annuler</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

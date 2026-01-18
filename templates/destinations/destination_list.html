@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Gestion des Destinations{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestion des Destinations</h2>
+        <a href="{% url 'destinations:destination_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nouvelle Destination
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <input type="text"
+                           name="q"
+                           class="form-control"
+                           placeholder="Rechercher par ville ou ligne..."
+                           value="{{ search_query }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Rechercher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if destinations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ligne</th>
+                                <th>Gare de départ</th>
+                                <th>Ville d'arrivée</th>
+                                <th>Prix (GNF)</th>
+                                <th>Date de création</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for destination in destinations %}
+                                <tr>
+                                    <td><strong>{{ destination.ligne.nom }}</strong></td>
+                                    <td>{{ destination.gare.nom }}</td>
+                                    <td>{{ destination.ville_arrivee }}</td>
+                                    <td class="text-end">{{ destination.montant|format_montant }} FCFA</td>
+                                    <td>{{ destination.date_creation|date:"d/m/Y" }}</td>
+                                    <td class="text-end">
+                                        <a href="{% url 'destinations:destination_update' destination.pk %}"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Modifier">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'destinations:destination_delete' destination.pk %}"
+                                           class="btn btn-sm btn-outline-danger"
+                                           title="Supprimer">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-geo-alt" style="font-size: 3rem; color: var(--color-text-muted);"></i>
+                    <p class="mt-3 text-muted">
+                        {% if search_query %}
+                            Aucune destination trouvée pour "{{ search_query }}".
+                        {% else %}
+                            Aucune destination enregistrée.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'destinations:destination_create' %}" class="btn btn-primary mt-2">
+                        Créer la première destination
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

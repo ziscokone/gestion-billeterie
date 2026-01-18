@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Tableau de bord - Gestion Billetterie{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="bi bi-speedometer2 me-2 text-accent"></i>
+            Tableau de bord
+        </h2>
+        <span class="text-muted">
+            <i class="bi bi-calendar3 me-1"></i>
+            {% now "l d F Y" %}
+        </span>
+    </div>
+
+    <!-- Statistiques du jour -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ voyages_today }}</div>
+                <div class="stat-label">
+                    <i class="bi bi-bus-front me-1"></i>
+                    Voyages aujourd'hui
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ billets_vendus_today }}</div>
+                <div class="stat-label">
+                    <i class="bi bi-ticket-perforated me-1"></i>
+                    Billets vendus
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value" style="font-size: 1.5rem;">{{ montant_today|format_montant }} FCFA</div>
+                <div class="stat-label">
+                    <i class="bi bi-cash me-1"></i>
+                    Montant encaissé
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ reservations_en_attente }}</div>
+                <div class="stat-label">
+                    <i class="bi bi-bookmark me-1"></i>
+                    Réservations en attente
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Prochains voyages -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock me-2"></i>Prochains voyages</span>
+                    <a href="{% url 'guichet:voyage_list' %}" class="btn btn-sm btn-outline-primary">
+                        Voir tout
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if prochains_voyages %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Heure</th>
+                                    <th>Ligne</th>
+                                    <th>Véhicule</th>
+                                    <th>Places</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for voyage in prochains_voyages %}
+                                <tr>
+                                    <td>{{ voyage.date_depart|date:"d/m/Y" }}</td>
+                                    <td>{{ voyage.heure_depart|time:"H:i" }}</td>
+                                    <td>{{ voyage.ligne }}</td>
+                                    <td>
+                                        {% if voyage.vehicule %}
+                                            {{ voyage.vehicule.immatriculation }}
+                                        {% else %}
+                                            <span class="text-muted">Non assigné</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if voyage.vehicule %}
+                                            <span class="badge badge-disponible">
+                                                {{ voyage.get_nb_places_disponibles }}/{{ voyage.capacite }}
+                                            </span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'guichet:vente' voyage.pk %}"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="bi bi-cart-plus"></i> Vendre
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-x display-4"></i>
+                        <p class="mt-3">Aucun voyage programmé</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions rapides -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-lightning me-2"></i>Actions rapides
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'guichet:voyage_list' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-bus-front me-2"></i>
+                            Voir les voyages
+                        </a>
+                        <a href="{% url 'guichet:reservations' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-bookmark me-2"></i>
+                            Réservations en attente
+                        </a>
+                        <a href="{% url 'comptabilite:point_journalier' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-cash-stack me-2"></i>
+                            Point du jour
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info utilisateur -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <i class="bi bi-person-badge me-2"></i>Mon profil
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Nom :</strong> {{ user.nom_complet }}
+                    </p>
+                    <p class="mb-2">
+                        <strong>Rôle :</strong> {{ user.get_role_display }}
+                    </p>
+                    {% if user.gare %}
+                    <p class="mb-0">
+                        <strong>Gare :</strong> {{ user.gare.nom }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

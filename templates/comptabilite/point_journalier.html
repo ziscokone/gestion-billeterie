@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Point journalier - Gestion Billetterie{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="bi bi-cash-stack me-2 text-accent"></i>
+            Point journalier
+        </h2>
+    </div>
+
+    <!-- Sélection de date -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Date</label>
+                    <input type="date" name="date" class="form-control"
+                           value="{{ date_selectionnee|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-1"></i> Voir
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Résumé -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_billets }}</div>
+                <div class="stat-label">
+                    <i class="bi bi-ticket-perforated me-1"></i>
+                    Billets vendus
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stat-card">
+                <div class="stat-value" style="font-size: 1.75rem;">{{ total_montant|format_montant }} FCFA</div>
+                <div class="stat-label">
+                    <i class="bi bi-cash me-1"></i>
+                    Montant total encaissé
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Stats par guichetier -->
+        {% if guichetiers_stats %}
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-people me-2"></i>Par guichetier
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Guichetier</th>
+                                    <th class="text-center">Billets</th>
+                                    <th class="text-end">Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in guichetiers_stats %}
+                                <tr>
+                                    <td>{{ stat.guichetier__nom_complet|default:"Non assigné" }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ stat.nb_billets }}</span>
+                                    </td>
+                                    <td class="text-end">{{ stat.montant|format_montant }} FCFA</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Stats par gare -->
+        {% if gares_stats %}
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-building me-2"></i>Par gare
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Gare</th>
+                                    <th class="text-center">Billets</th>
+                                    <th class="text-end">Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in gares_stats %}
+                                <tr>
+                                    <td>{{ stat.voyage__gare__nom }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ stat.nb_billets }}</span>
+                                    </td>
+                                    <td class="text-end">{{ stat.montant|format_montant }} FCFA</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Dernières ventes -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <i class="bi bi-clock-history me-2"></i>Dernières ventes
+        </div>
+        <div class="card-body p-0">
+            {% if derniers_billets %}
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Heure</th>
+                            <th>N° Ticket</th>
+                            <th>Client</th>
+                            <th>Voyage</th>
+                            <th>Siège</th>
+                            <th class="text-end">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for billet in derniers_billets %}
+                        <tr>
+                            <td>{{ billet.date_paiement|time:"H:i" }}</td>
+                            <td><code>{{ billet.numero }}</code></td>
+                            <td>{{ billet.client_nom }}</td>
+                            <td>{{ billet.voyage.ligne }}</td>
+                            <td>
+                                <span class="badge badge-paye">{{ billet.numero_siege }}</span>
+                            </td>
+                            <td class="text-end">{{ billet.montant|format_montant }} FCFA</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                Aucune vente pour cette date
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

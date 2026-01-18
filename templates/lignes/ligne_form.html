@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouvelle{% endif %} Ligne{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {% if form.instance.pk %}
+                            <i class="bi bi-pencil me-2"></i>Modifier la ligne
+                        {% else %}
+                            <i class="bi bi-plus-circle me-2"></i>Nouvelle ligne
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.gare.id_for_label }}" class="form-label">
+                                {{ form.gare.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.gare }}
+                            {% if form.gare.errors %}
+                                <div class="invalid-feedback d-block">{{ form.gare.errors }}</div>
+                            {% endif %}
+                            {% if form.gare.help_text %}
+                                <div class="form-text">{{ form.gare.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.nom.id_for_label }}" class="form-label">
+                                {{ form.nom.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nom }}
+                            {% if form.nom.errors %}
+                                <div class="invalid-feedback d-block">{{ form.nom.errors }}</div>
+                            {% endif %}
+                            {% if form.nom.help_text %}
+                                <div class="form-text">{{ form.nom.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.ville_depart.id_for_label }}" class="form-label">
+                                    {{ form.ville_depart.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.ville_depart }}
+                                {% if form.ville_depart.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.ville_depart.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.ville_arrivee.id_for_label }}" class="form-label">
+                                    {{ form.ville_arrivee.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.ville_arrivee }}
+                                {% if form.ville_arrivee.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.ville_arrivee.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.distance_km.id_for_label }}" class="form-label">
+                                    {{ form.distance_km.label }}
+                                </label>
+                                {{ form.distance_km }}
+                                {% if form.distance_km.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.distance_km.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.duree_estimee.id_for_label }}" class="form-label">
+                                    {{ form.duree_estimee.label }}
+                                </label>
+                                {{ form.duree_estimee }}
+                                {% if form.duree_estimee.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.duree_estimee.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.active }}
+                                <label class="form-check-label" for="{{ form.active.id_for_label }}">
+                                    {{ form.active.label }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'lignes:ligne_list' %}" class="btn btn-danger text-white fw-bold">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                {% if form.instance.pk %}Modifier{% else %}Créer{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

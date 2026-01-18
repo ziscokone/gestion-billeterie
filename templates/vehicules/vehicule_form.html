@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouveau{% endif %} Véhicule{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {% if form.instance.pk %}
+                            Modifier le véhicule
+                        {% else %}
+                            Nouveau véhicule
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.modele.id_for_label }}" class="form-label">
+                                {{ form.modele.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.modele }}
+                            {% if form.modele.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.modele.errors }}
+                                </div>
+                            {% endif %}
+                            {% if form.modele.help_text %}
+                                <div class="form-text">{{ form.modele.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.immatriculation.id_for_label }}" class="form-label">
+                                {{ form.immatriculation.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.immatriculation }}
+                            {% if form.immatriculation.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.immatriculation.errors }}
+                                </div>
+                            {% endif %}
+                            {% if form.immatriculation.help_text %}
+                                <div class="form-text">{{ form.immatriculation.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.actif }}
+                                <label class="form-check-label" for="{{ form.actif.id_for_label }}">
+                                    {{ form.actif.label }}
+                                </label>
+                                {% if form.actif.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.actif.errors }}
+                                    </div>
+                                {% endif %}
+                                {% if form.actif.help_text %}
+                                    <div class="form-text">{{ form.actif.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'vehicules:vehicule_list' %}" class="btn btn-danger text-white fw-bold">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                {% if form.instance.pk %}Modifier{% else %}Créer{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

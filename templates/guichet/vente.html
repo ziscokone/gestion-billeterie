@@ -1,0 +1,495 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Vente - {{ voyage.ligne }} - Gestion Billetterie{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- En-tête du voyage -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h4 class="mb-2">
+                        <i class="bi bi-bus-front me-2 text-accent"></i>
+                        {{ voyage.ligne }}
+                    </h4>
+                    <div class="d-flex flex-wrap gap-3 text-muted">
+                        <span>
+                            <i class="bi bi-calendar3 me-1"></i>
+                            {{ voyage.date_depart|date:"l d F Y" }}
+                        </span>
+                        <span>
+                            <i class="bi bi-clock me-1"></i>
+                            {{ voyage.heure_depart|time:"H:i" }}
+                        </span>
+                        <span>
+                            <i class="bi bi-sun{% if voyage.periode == 'soir' %}-fill{% endif %} me-1"></i>
+                            {{ voyage.get_periode_display }}
+                        </span>
+                        {% if voyage.vehicule %}
+                        <span>
+                            <i class="bi bi-truck me-1"></i>
+                            {{ voyage.vehicule.immatriculation }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <div class="h4 text-accent mb-0">
+                        <i class="bi bi-geo-alt me-1"></i>{{ voyage.ligne.ville_arrivee }}
+                    </div>
+                    <small class="text-muted">Destination finale</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Plan des sièges -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-grid-3x3 me-2"></i>Plan des sièges</span>
+                    <div>
+                        <span class="badge badge-disponible me-2">{{ nb_disponibles }} disponibles</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshSeats">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Légende -->
+                    <div class="siege-legende mb-4">
+                        <div class="siege-legende-item">
+                            <div class="siege-legende-color" style="background-color: var(--color-siege-disponible); border: 2px solid var(--color-success);"></div>
+                            <span>Disponible</span>
+                        </div>
+                        <div class="siege-legende-item">
+                            <div class="siege-legende-color" style="background-color: var(--color-siege-reserve); border: 2px solid var(--color-warning);"></div>
+                            <span>Réservé</span>
+                        </div>
+                        <div class="siege-legende-item">
+                            <div class="siege-legende-color" style="background-color: var(--color-siege-paye);"></div>
+                            <span>Payé</span>
+                        </div>
+                        <div class="siege-legende-item">
+                            <div class="siege-legende-color" style="background-color: var(--color-accent);"></div>
+                            <span>Sélectionné</span>
+                        </div>
+                    </div>
+
+                    <!-- Grille des sièges -->
+                    {% if disposition_sieges %}
+                    <div class="siege-grid" id="siegeGrid">
+                        {% for rangee in disposition_sieges.rangees %}
+                        <div class="siege-row">
+                            {% for siege in rangee.sieges %}
+                                {% if siege.type == 'couloir' %}
+                                    <div class="siege couloir"></div>
+                                {% elif siege.type == 'non_vendable' %}
+                                    <div class="siege non-vendable" title="Non vendable">
+                                        {{ siege.numero }}
+                                    </div>
+                                {% else %}
+                                    <div class="siege {{ siege.statut|default:'disponible' }}"
+                                         data-numero="{{ siege.numero }}"
+                                         title="Siège {{ siege.numero }}{% if siege.statut == 'reserve' %} (Réservé){% elif siege.statut == 'paye' %} (Payé){% endif %}">
+                                        {{ siege.numero }}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-exclamation-triangle display-4"></i>
+                        <p class="mt-3">Véhicule non assigné à ce voyage</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Réservations en attente -->
+            {% if reservations %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <i class="bi bi-bookmark me-2"></i>
+                    Réservations en attente ({{ reservations|length }})
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Téléphone</th>
+                                    <th>Siège</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in reservations %}
+                                <tr>
+                                    <td>{{ reservation.client_nom }}</td>
+                                    <td>{{ reservation.client_telephone }}</td>
+                                    <td>
+                                        <span class="badge badge-reserve">{{ reservation.numero_siege }}</span>
+                                    </td>
+                                    <td>
+                                        <button type="button"
+                                                class="btn btn-sm btn-success btn-payer"
+                                                data-id="{{ reservation.pk }}">
+                                            <i class="bi bi-cash"></i> Payer
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Formulaire de vente -->
+        <div class="col-lg-5">
+            <div class="card sticky-top" style="top: 80px;">
+                <div class="card-header">
+                    <i class="bi bi-cart-plus me-2"></i>Nouvelle vente
+                </div>
+                <div class="card-body">
+                    <form id="venteForm">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Nom du client *</label>
+                            <input type="text" class="form-control" name="client_nom"
+                                   placeholder="Nom complet du client" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Téléphone *</label>
+                            <input type="tel" class="form-control" name="client_telephone"
+                                   placeholder="Numéro de téléphone" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Destination *</label>
+                            <select class="form-select" name="destination_id" id="destinationSelect" required>
+                                <option value="">Sélectionner une destination</option>
+                                {% for dest in destinations %}
+                                <option value="{{ dest.pk }}" data-montant="{{ dest.montant }}">
+                                    {{ dest.ville_arrivee }} - {{ dest.montant|format_montant }} FCFA
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="mt-2">
+                                <strong>Montant : <span id="montantAffiche" class="text-success">-</span></strong>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mode de vente</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="mode_vente"
+                                       id="modeUnitaire" value="unitaire" checked>
+                                <label class="btn btn-outline-primary" for="modeUnitaire">
+                                    <i class="bi bi-1-square me-1"></i> Unitaire
+                                </label>
+
+                                <input type="radio" class="btn-check" name="mode_vente"
+                                       id="modePlage" value="plage">
+                                <label class="btn btn-outline-primary" for="modePlage">
+                                    <i class="bi bi-collection me-1"></i> Plage
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Vente unitaire -->
+                        <div id="venteUnitaire" class="mb-3">
+                            <label class="form-label">Siège sélectionné</label>
+                            <input type="number" class="form-control" name="numero_siege"
+                                   id="siegeSelectionne" placeholder="Cliquez sur un siège" readonly>
+                            <small class="text-muted">Cliquez sur un siège disponible dans le plan</small>
+                        </div>
+
+                        <!-- Vente par plage -->
+                        <div id="ventePlage" class="mb-3" style="display: none;">
+                            <label class="form-label">Plage de sièges</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" class="form-control" name="siege_debut"
+                                           placeholder="De" min="1">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" class="form-control" name="siege_fin"
+                                           placeholder="À" min="1">
+                                </div>
+                            </div>
+                            <small class="text-muted">Les sièges déjà pris seront ignorés</small>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" name="payer" value="true">
+                                <i class="bi bi-cash me-2"></i>
+                                Vendre et imprimer
+                            </button>
+                            <button type="submit" class="btn btn-outline-warning" name="payer" value="false">
+                                <i class="bi bi-bookmark me-2"></i>
+                                Réserver seulement
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'impression -->
+<div class="modal fade" id="printModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-printer me-2"></i>Ticket(s) créé(s)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="ticketsContainer">
+                <!-- Les tickets seront insérés ici -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <i class="bi bi-printer me-2"></i>Imprimer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const voyageId = {{ voyage.pk }};
+    const form = document.getElementById('venteForm');
+    const siegeGrid = document.getElementById('siegeGrid');
+    const siegeInput = document.getElementById('siegeSelectionne');
+    const modeUnitaire = document.getElementById('modeUnitaire');
+    const modePlage = document.getElementById('modePlage');
+    const venteUnitaireDiv = document.getElementById('venteUnitaire');
+    const ventePlageDiv = document.getElementById('ventePlage');
+    const printModal = new bootstrap.Modal(document.getElementById('printModal'));
+    const destinationSelect = document.getElementById('destinationSelect');
+    const montantAffiche = document.getElementById('montantAffiche');
+
+    // Affichage automatique du montant quand on sélectionne une destination
+    destinationSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const montant = selectedOption.dataset.montant;
+
+        if (montant) {
+            montantAffiche.textContent = parseFloat(montant).toLocaleString('fr-FR') + ' FCFA';
+            montantAffiche.classList.add('text-success');
+        } else {
+            montantAffiche.textContent = '-';
+            montantAffiche.classList.remove('text-success');
+        }
+    });
+
+    // Gestion du mode de vente
+    modeUnitaire.addEventListener('change', function() {
+        venteUnitaireDiv.style.display = 'block';
+        ventePlageDiv.style.display = 'none';
+    });
+
+    modePlage.addEventListener('change', function() {
+        venteUnitaireDiv.style.display = 'none';
+        ventePlageDiv.style.display = 'block';
+    });
+
+    // Sélection des sièges
+    if (siegeGrid) {
+        siegeGrid.addEventListener('click', function(e) {
+            const siege = e.target.closest('.siege');
+            if (!siege) return;
+
+            const numero = siege.dataset.numero;
+            if (!numero) return;
+
+            // Ne pas permettre la sélection des sièges non disponibles en mode unitaire
+            if (modeUnitaire.checked) {
+                if (siege.classList.contains('paye') || siege.classList.contains('non-vendable')) {
+                    return;
+                }
+
+                // Désélectionner tous les autres
+                document.querySelectorAll('.siege.selected').forEach(s => {
+                    s.classList.remove('selected');
+                });
+
+                // Sélectionner ce siège
+                siege.classList.add('selected');
+                siegeInput.value = numero;
+            }
+        });
+    }
+
+    // Soumission du formulaire
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const submitBtn = e.submitter;
+        formData.set('payer', submitBtn.value);
+
+        // Validation
+        if (!destinationSelect.value) {
+            alert('Veuillez sélectionner une destination');
+            return;
+        }
+
+        if (modeUnitaire.checked && !siegeInput.value) {
+            alert('Veuillez sélectionner un siège');
+            return;
+        }
+
+        // Envoi
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Traitement...';
+
+        fetch(`/api/creer-billet/${voyageId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Afficher les tickets
+                displayTickets(data.billets);
+                printModal.show();
+
+                // Rafraîchir la grille des sièges
+                refreshSeats();
+
+                // Réinitialiser le formulaire
+                form.reset();
+                document.querySelectorAll('.siege.selected').forEach(s => {
+                    s.classList.remove('selected');
+                });
+                siegeInput.value = '';
+            } else {
+                alert(data.error || 'Une erreur est survenue');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur de connexion');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = submitBtn.value === 'true'
+                ? '<i class="bi bi-cash me-2"></i>Vendre et imprimer'
+                : '<i class="bi bi-bookmark me-2"></i>Réserver seulement';
+        });
+    });
+
+    // Affichage des tickets
+    function displayTickets(billets) {
+        const container = document.getElementById('ticketsContainer');
+        container.innerHTML = billets.map(billet => `
+            <div class="ticket-preview mb-3">
+                <div class="ticket-header-row">
+                    <div class="ticket-logo">
+                        ${billet.compagnie_logo
+                            ? `<img src="${billet.compagnie_logo}" alt="Logo" class="ticket-logo-img">`
+                            : `<div class="ticket-logo-placeholder"><i class="bi bi-bus-front"></i></div>`
+                        }
+                    </div>
+                    <div class="ticket-gare-info">
+                        <strong class="ticket-compagnie-nom">${billet.compagnie_nom || 'COMPAGNIE DE TRANSPORT'}</strong>
+                        ${billet.gare_telephone ? `<div class="ticket-gare-tel">Tel: ${billet.gare_telephone}</div>` : ''}
+                        ${billet.gare_adresse ? `<div class="ticket-gare-adresse">${billet.gare_adresse}</div>` : ''}
+                    </div>
+                </div>
+                <div class="ticket-body">
+                    <div class="ticket-row"><span>N° Ticket:</span><strong>${billet.numero}</strong></div>
+                    <div class="ticket-row"><span>N° Depart:</span><strong>${billet.numero_depart || 'N/A'}</strong></div>
+                    <div class="ticket-row"><span>Client:</span><span>${billet.client_nom}</span></div>
+                    <div class="ticket-row"><span>Siege:</span><strong class="ticket-siege">${billet.numero_siege}</strong></div>
+                    <hr>
+                    <div class="ticket-row"><span>Ligne:</span><span>${billet.ligne}</span></div>
+                    <div class="ticket-row"><span>Destination:</span><strong>${billet.destination || 'N/A'}</strong></div>
+                    <div class="ticket-row"><span>Date:</span><span>${billet.date_depart}</span></div>
+                    <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
+                    <hr>
+                    <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Rafraîchir les sièges
+    function refreshSeats() {
+        fetch(`/api/sieges/${voyageId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mettre à jour les classes des sièges
+                    data.disposition.rangees.forEach(rangee => {
+                        rangee.sieges.forEach(siege => {
+                            if (siege.numero) {
+                                const el = document.querySelector(`.siege[data-numero="${siege.numero}"]`);
+                                if (el) {
+                                    el.className = `siege ${siege.statut || 'disponible'}`;
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+    }
+
+    // Bouton rafraîchir
+    document.getElementById('refreshSeats').addEventListener('click', refreshSeats);
+
+    // Payer une réservation
+    document.querySelectorAll('.btn-payer').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const billetId = this.dataset.id;
+
+            if (!confirm('Confirmer le paiement de cette réservation ?')) return;
+
+            fetch(`/api/payer/${billetId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayTickets([data.billet]);
+                    printModal.show();
+                    refreshSeats();
+                    // Supprimer la ligne de réservation
+                    this.closest('tr').remove();
+                } else {
+                    alert(data.error);
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

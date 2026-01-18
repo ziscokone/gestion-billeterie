@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouveau{% endif %} Modèle de Véhicule{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {% if form.instance.pk %}
+                            Modifier le modèle de véhicule
+                        {% else %}
+                            Nouveau modèle de véhicule
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.marque.id_for_label }}" class="form-label">
+                                    {{ form.marque.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.marque }}
+                                {% if form.marque.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.marque.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.nom.id_for_label }}" class="form-label">
+                                    {{ form.nom.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.nom }}
+                                {% if form.nom.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.nom.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.capacite.id_for_label }}" class="form-label">
+                                {{ form.capacite.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.capacite }}
+                            {% if form.capacite.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.capacite.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.disposition_sieges.id_for_label }}" class="form-label">
+                                {{ form.disposition_sieges.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.disposition_sieges }}
+                            {% if form.disposition_sieges.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.disposition_sieges.errors }}
+                                </div>
+                            {% endif %}
+                            {% if form.disposition_sieges.help_text %}
+                                <div class="form-text">{{ form.disposition_sieges.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Structure JSON:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li><strong>colonnes</strong>: nombre de colonnes dans la grille</li>
+                                <li><strong>rangees</strong>: tableau de rangées, chaque rangée contient les numéros de sièges</li>
+                                <li><strong>sieges_non_vendables</strong>: tableau des numéros de sièges non vendables (ex: siège conducteur)</li>
+                                <li>Utiliser <code>null</code> pour les espaces vides (couloirs)</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'vehicules:modele_list' %}" class="btn btn-danger text-white fw-bold">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                {% if form.instance.pk %}Modifier{% else %}Créer{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
