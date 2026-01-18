@@ -33,10 +33,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Cloudinary pour les media files
-    'cloudinary_storage',
-    'cloudinary',
-
     # Local apps
     'core',
     'apps.compagnie',
@@ -50,6 +46,10 @@ INSTALLED_APPS = [
     'apps.billets',
     'apps.guichet',
     'apps.comptabilite',
+
+    # Cloudinary (doit être après les apps locales)
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
