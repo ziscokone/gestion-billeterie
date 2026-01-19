@@ -114,17 +114,6 @@
                 </div>
             </div>
         </div>
-        {% if voyage.get_nb_places_disponibles > 0 and voyage.statut != 'termine' %}
-        <div class="col-md-3">
-            <div class="card text-center border-primary">
-                <div class="card-body py-2 d-flex align-items-center justify-content-center">
-                    <a href="{% url 'guichet:vente' voyage.pk %}" class="btn btn-primary btn-lg w-100">
-                        <i class="bi bi-cart-plus me-2"></i>Vendre des billets
-                    </a>
-                </div>
-            </div>
-        </div>
-        {% endif %}
         <div class="col-md-3">
             <div class="card text-center border-info">
                 <div class="card-body py-2">
@@ -156,9 +145,14 @@
         <div class="card-header bg-white py-2">
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="bi bi-ticket-perforated me-2"></i>Liste des Passagers ({{ billets.count }})</h6>
-                <div>
+                <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-success me-1">{{ nb_billets_payes }} Payés</span>
                     <span class="badge bg-warning">{{ nb_billets_reserves }} Réservés</span>
+                    {% if voyage.get_nb_places_disponibles > 0 and voyage.statut != 'termine' %}
+                    <a href="{% url 'guichet:vente' voyage.pk %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-cart-plus me-1"></i>Vendre des billets
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

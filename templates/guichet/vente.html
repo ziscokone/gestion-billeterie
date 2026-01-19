@@ -60,23 +60,28 @@
                 </div>
                 <div class="card-body">
                     <!-- Légende -->
-                    <div class="siege-legende mb-4">
-                        <div class="siege-legende-item">
-                            <div class="siege-legende-color" style="background-color: var(--color-siege-disponible); border: 2px solid var(--color-success);"></div>
-                            <span>Disponible</span>
+                    <div class="siege-legende mb-4 d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="siege-legende-item">
+                                <div class="siege-legende-color" style="background-color: var(--color-siege-disponible); border: 2px solid var(--color-success);"></div>
+                                <span>Disponible</span>
+                            </div>
+                            <div class="siege-legende-item">
+                                <div class="siege-legende-color" style="background-color: var(--color-siege-reserve); border: 2px solid var(--color-warning);"></div>
+                                <span>Réservé</span>
+                            </div>
+                            <div class="siege-legende-item">
+                                <div class="siege-legende-color" style="background-color: var(--color-siege-paye);"></div>
+                                <span>Payé</span>
+                            </div>
+                            <div class="siege-legende-item">
+                                <div class="siege-legende-color" style="background-color: var(--color-accent);"></div>
+                                <span>Sélectionné</span>
+                            </div>
                         </div>
-                        <div class="siege-legende-item">
-                            <div class="siege-legende-color" style="background-color: var(--color-siege-reserve); border: 2px solid var(--color-warning);"></div>
-                            <span>Réservé</span>
-                        </div>
-                        <div class="siege-legende-item">
-                            <div class="siege-legende-color" style="background-color: var(--color-siege-paye);"></div>
-                            <span>Payé</span>
-                        </div>
-                        <div class="siege-legende-item">
-                            <div class="siege-legende-color" style="background-color: var(--color-accent);"></div>
-                            <span>Sélectionné</span>
-                        </div>
+                        <a href="{% url 'voyages:voyage_detail' voyage.pk %}" class="btn btn-sm btn-outline-primary" title="Voir les détails du voyage">
+                            <i class="bi bi-eye me-1"></i>Voir détails
+                        </a>
                     </div>
 
                     <!-- Grille des sièges -->
