@@ -54,7 +54,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # Prochains voyages (filtrés par gare)
         prochains_voyages = Voyage.objects.filter(
             date_depart__gte=today,
-            statut='programme'
+            statut__in=['programme', 'en_cours']
         )
         if not user.has_global_access and user.gare:
             prochains_voyages = prochains_voyages.filter(gare=user.gare)

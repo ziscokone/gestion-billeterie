@@ -689,3 +689,46 @@ def save_voyage_bagages(request, pk):
         return JsonResponse({'success': False, 'error': 'Données JSON invalides'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ==================== GESTION DU STATUT DU VOYAGE ====================
+
+@require_http_methods(["POST"])
+def terminer_voyage(request, pk):
+    """
+    Termine un voyage (change le statut de 'programme' ou 'en_cours' à 'termine').
+    Accessible à tous les guichetiers de la gare.
+    """
+    try:
+        # Récupérer le voyage
+        voyage = get_object_or_404(Voyage, pk=pk)
+
+        # Vérifier l'authentification
+        user = request.user
+        if not user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Non authentifié'}, status=401)
+
+        # Vérifier les permissions de gare
+        if not user.has_global_access and user.gare:
+            if voyage.gare != user.gare:
+                return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
+
+        # Vérifier que le statut actuel permet la terminaison
+        if voyage.statut not in ['programme', 'en_cours']:
+            return JsonResponse({
+                'success': False,
+                'error': f'Impossible de terminer un voyage avec le statut "{voyage.get_statut_display()}"'
+            }, status=400)
+
+        # Changer le statut à 'termine'
+        voyage.statut = 'termine'
+        voyage.save(update_fields=['statut', 'date_modification'])
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Le départ a été marqué comme terminé avec succès',
+            'nouveau_statut': voyage.get_statut_display()
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
