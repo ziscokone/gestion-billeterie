@@ -172,7 +172,7 @@ class Voyage(models.Model):
     def get_total_recettes(self):
         """Retourne le total des recettes (billets + bagages)."""
         from decimal import Decimal
-        montant_billets = self.get_montant_total()
+        montant_billets = Decimal(str(self.get_montant_total()))
         recette_bagages = self.recette_bagages if self.recette_bagages else Decimal('0')
         return montant_billets + recette_bagages
 
