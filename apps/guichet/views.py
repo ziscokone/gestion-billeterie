@@ -74,15 +74,26 @@ class VoyageListView(LoginRequiredMixin, ListView):
         user = self.request.user
         today = timezone.now().date()
 
+        # Filtre de statut
+        statut_filter = self.request.GET.get('statut', 'actifs')
+
+        # Définir les statuts à afficher selon le filtre
+        if statut_filter == 'termine':
+            statuts = ['termine']
+        elif statut_filter == 'tous':
+            statuts = ['programme', 'en_cours', 'termine']
+        else:  # 'actifs' par défaut
+            statuts = ['programme', 'en_cours']
+
         queryset = Voyage.objects.filter(
             date_depart__gte=today,
-            statut__in=['programme', 'en_cours']
+            statut__in=statuts
         )
 
         if not user.has_global_access:
             queryset = queryset.filter(gare=user.gare)
 
-        # Filtres
+        # Autres filtres
         date_filter = self.request.GET.get('date')
         ligne_filter = self.request.GET.get('ligne')
         periode_filter = self.request.GET.get('periode')
@@ -108,6 +119,9 @@ class VoyageListView(LoginRequiredMixin, ListView):
             context['lignes'] = user.gare.destinations.values_list(
                 'ligne', flat=True
             ).distinct() if user.gare else []
+
+        # Ajouter le filtre de statut actuel au contexte
+        context['statut_filter'] = self.request.GET.get('statut', 'actifs')
 
         return context
 

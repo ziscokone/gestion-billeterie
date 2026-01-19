@@ -35,7 +35,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Période</label>
                     <select name="periode" class="form-select">
                         <option value="">Toutes</option>
@@ -47,7 +47,21 @@
                         </option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label">Statut</label>
+                    <select name="statut" class="form-select">
+                        <option value="actifs" {% if statut_filter == 'actifs' %}selected{% endif %}>
+                            Programmé & En cours
+                        </option>
+                        <option value="termine" {% if statut_filter == 'termine' %}selected{% endif %}>
+                            Terminé
+                        </option>
+                        <option value="tous" {% if statut_filter == 'tous' %}selected{% endif %}>
+                            Tous
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary me-2">
                         <i class="bi bi-search me-1"></i> Filtrer
                     </button>
