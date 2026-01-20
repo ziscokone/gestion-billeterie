@@ -237,6 +237,32 @@
                             <small class="text-muted">Les sièges déjà pris seront ignorés</small>
                         </div>
 
+                        <div class="mb-3">
+                            <label class="form-label">Moyen de paiement</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="moyen_paiement" id="paiementCash" value="cash" checked>
+                                    <label class="form-check-label badge" for="paiementCash" style="background-color: #6c757d; cursor: pointer;">Cash</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="moyen_paiement" id="paiementWave" value="wave">
+                                    <label class="form-check-label badge" for="paiementWave" style="background-color: #00CED1; cursor: pointer;">Wave</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="moyen_paiement" id="paiementOrange" value="orange_money">
+                                    <label class="form-check-label badge" for="paiementOrange" style="background-color: #FF6600; cursor: pointer;">Orange</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="moyen_paiement" id="paiementMTN" value="mtn_money">
+                                    <label class="form-check-label badge" for="paiementMTN" style="background-color: #FFCC00; color: #000; cursor: pointer;">MTN</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="moyen_paiement" id="paiementMoov" value="moov_money">
+                                    <label class="form-check-label badge" for="paiementMoov" style="background-color: #003366; cursor: pointer;">Moov</label>
+                                </div>
+                            </div>
+                        </div>
+
                         <hr>
 
                         <div class="d-grid gap-2">
@@ -457,6 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
                     <hr>
                     <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
+                    <div class="ticket-row"><span>Paiement:</span><strong>${billet.moyen_paiement_display || 'Cash'}</strong></div>
                 </div>
             </div>
         `).join('');

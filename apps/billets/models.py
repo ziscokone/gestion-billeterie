@@ -12,6 +12,14 @@ class Billet(models.Model):
         ('paye', 'Payé'),
     ]
 
+    MOYEN_PAIEMENT_CHOICES = [
+        ('cash', 'Cash'),
+        ('wave', 'Wave'),
+        ('orange_money', 'Orange Money'),
+        ('mtn_money', 'MTN Money'),
+        ('moov_money', 'Moov Money'),
+    ]
+
     numero = models.CharField(
         max_length=30,
         unique=True,
@@ -44,6 +52,12 @@ class Billet(models.Model):
         choices=STATUT_CHOICES,
         default='reserve',
         verbose_name="Statut"
+    )
+    moyen_paiement = models.CharField(
+        max_length=20,
+        choices=MOYEN_PAIEMENT_CHOICES,
+        default='cash',
+        verbose_name="Moyen de paiement"
     )
     guichetier = models.ForeignKey(
         'personnel.Utilisateur',
@@ -94,14 +108,15 @@ class Billet(models.Model):
 
         super().save(*args, **kwargs)
 
-    def payer(self):
+    def payer(self, moyen_paiement='cash'):
         """Marque le billet comme payé."""
         if self.statut == 'paye':
             return False
 
         self.statut = 'paye'
+        self.moyen_paiement = moyen_paiement
         self.date_paiement = timezone.now()
-        self.save(update_fields=['statut', 'date_paiement', 'date_modification'])
+        self.save(update_fields=['statut', 'moyen_paiement', 'date_paiement', 'date_modification'])
         return True
 
     @property
@@ -117,6 +132,15 @@ class Billet(models.Model):
         gare = self.voyage.gare
         compagnie = gare.compagnie if gare else None
 
+        # Mapping des moyens de paiement pour l'affichage
+        moyen_paiement_display = {
+            'cash': 'Cash',
+            'wave': 'Wave',
+            'orange_money': 'Orange Money',
+            'mtn_money': 'MTN Money',
+            'moov_money': 'Moov Money',
+        }
+
         return {
             'numero': self.numero,
             'numero_depart': self.voyage.numero_depart if hasattr(self.voyage, 'numero_depart') else 'N/A',
@@ -128,6 +152,8 @@ class Billet(models.Model):
             'heure_depart': self.voyage.heure_depart.strftime('%H:%M'),
             'periode': self.voyage.get_periode_display(),
             'montant': self.montant,
+            'moyen_paiement': self.moyen_paiement,
+            'moyen_paiement_display': moyen_paiement_display.get(self.moyen_paiement, 'Cash'),
             # Informations de la gare
             'gare_nom': gare.nom if gare else '',
             'gare_adresse': gare.adresse if gare else '',
@@ -138,7 +164,7 @@ class Billet(models.Model):
         }
 
     @classmethod
-    def creer_billet(cls, voyage, client_nom, client_telephone, numero_siege, guichetier, destination=None, payer=True):
+    def creer_billet(cls, voyage, client_nom, client_telephone, numero_siege, guichetier, destination=None, payer=True, moyen_paiement='cash'):
         """
         Crée un nouveau billet.
 
@@ -150,6 +176,7 @@ class Billet(models.Model):
             guichetier: Utilisateur qui crée le billet
             destination: Instance de la Destination choisie par le client
             payer: Si True, marque directement comme payé
+            moyen_paiement: Moyen de paiement (cash, wave, orange_money, mtn_money, moov_money)
 
         Returns:
             Instance du Billet créé
@@ -170,13 +197,14 @@ class Billet(models.Model):
             montant=destination.montant,
             guichetier=guichetier,
             statut='paye' if payer else 'reserve',
+            moyen_paiement=moyen_paiement if payer else 'cash',
             date_paiement=timezone.now() if payer else None
         )
         billet.save()
         return billet
 
     @classmethod
-    def creer_billets_plage(cls, voyage, client_nom, client_telephone, siege_debut, siege_fin, guichetier, destination, payer=True):
+    def creer_billets_plage(cls, voyage, client_nom, client_telephone, siege_debut, siege_fin, guichetier, destination, payer=True, moyen_paiement='cash'):
         """
         Crée plusieurs billets pour une plage de sièges.
         Ignore les sièges déjà pris.
@@ -190,6 +218,7 @@ class Billet(models.Model):
             guichetier: Utilisateur qui crée les billets
             destination: Instance de la Destination (obligatoire)
             payer: Si True, marque directement comme payé
+            moyen_paiement: Moyen de paiement (cash, wave, orange_money, mtn_money, moov_money)
 
         Returns:
             list: Liste des billets créés
@@ -210,7 +239,8 @@ class Billet(models.Model):
                         numero_siege=numero_siege,
                         guichetier=guichetier,
                         destination=destination,
-                        payer=payer
+                        payer=payer,
+                        moyen_paiement=moyen_paiement
                     )
                     billets_crees.append(billet)
                 except ValidationError:

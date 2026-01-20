@@ -185,6 +185,7 @@ def creer_billet(request, voyage_id):
     destination_id = request.POST.get('destination_id')
     mode_vente = request.POST.get('mode_vente', 'unitaire')
     payer = request.POST.get('payer', 'true') == 'true'
+    moyen_paiement = request.POST.get('moyen_paiement', 'cash')
 
     if not client_nom or not client_telephone:
         return JsonResponse({
@@ -225,7 +226,8 @@ def creer_billet(request, voyage_id):
                 numero_siege=numero_siege,
                 guichetier=user,
                 destination=destination,
-                payer=payer
+                payer=payer,
+                moyen_paiement=moyen_paiement
             )
             billets_crees.append(billet)
 
@@ -250,7 +252,8 @@ def creer_billet(request, voyage_id):
                 siege_fin=siege_fin,
                 guichetier=user,
                 destination=destination,
-                payer=payer
+                payer=payer,
+                moyen_paiement=moyen_paiement
             )
 
         if not billets_crees:
@@ -291,7 +294,9 @@ def payer_reservation(request, billet_id):
             'error': 'Ce billet est déjà payé'
         })
 
-    billet.payer()
+    # Récupérer le moyen de paiement (par défaut cash)
+    moyen_paiement = request.POST.get('moyen_paiement', 'cash')
+    billet.payer(moyen_paiement=moyen_paiement)
 
     return JsonResponse({
         'success': True,

@@ -145,7 +145,12 @@
         <div class="card-header bg-white py-2">
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="bi bi-ticket-perforated me-2"></i>Liste des Passagers ({{ billets.count }})</h6>
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    {% if paiements_cash > 0 %}<span class="badge me-1" style="background-color: #6c757d;">Cash: {{ paiements_cash }}</span>{% endif %}
+                    {% if paiements_wave > 0 %}<span class="badge me-1" style="background-color: #00CED1;">Wave: {{ paiements_wave }}</span>{% endif %}
+                    {% if paiements_orange > 0 %}<span class="badge me-1" style="background-color: #FF6600;">Orange: {{ paiements_orange }}</span>{% endif %}
+                    {% if paiements_mtn > 0 %}<span class="badge me-1" style="background-color: #FFCC00; color: #000;">MTN: {{ paiements_mtn }}</span>{% endif %}
+                    {% if paiements_moov > 0 %}<span class="badge me-1" style="background-color: #003366;">Moov: {{ paiements_moov }}</span>{% endif %}
                     <span class="badge bg-success me-1">{{ nb_billets_payes }} Payés</span>
                     <span class="badge bg-warning">{{ nb_billets_reserves }} Réservés</span>
                     {% if voyage.get_nb_places_disponibles > 0 and voyage.statut != 'termine' %}
@@ -193,6 +198,17 @@
                                 <td class="text-center">
                                     {% if billet.statut == 'paye' %}
                                         <span class="badge bg-success">Payé</span>
+                                        {% if billet.moyen_paiement == 'cash' %}
+                                            <span class="badge" style="background-color: #6c757d;">Cash</span>
+                                        {% elif billet.moyen_paiement == 'wave' %}
+                                            <span class="badge" style="background-color: #00CED1;">Wave</span>
+                                        {% elif billet.moyen_paiement == 'orange_money' %}
+                                            <span class="badge" style="background-color: #FF6600;">Orange</span>
+                                        {% elif billet.moyen_paiement == 'mtn_money' %}
+                                            <span class="badge" style="background-color: #FFCC00; color: #000;">MTN</span>
+                                        {% elif billet.moyen_paiement == 'moov_money' %}
+                                            <span class="badge" style="background-color: #003366;">Moov</span>
+                                        {% endif %}
                                     {% else %}
                                         <span class="badge bg-warning">Réservé</span>
                                     {% endif %}
@@ -509,6 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
                         <hr>
                         <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
+                        <div class="ticket-row"><span>Paiement:</span><strong>${billet.moyen_paiement_display || 'Cash'}</strong></div>
                     </div>
                 </div>
             </div>

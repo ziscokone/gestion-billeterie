@@ -110,14 +110,23 @@ class VoyageDetailView(GestionRequiredMixin, DetailView):
 
         # Récupérer tous les billets du voyage
         billets = voyage.billets.select_related('guichetier').order_by('numero_siege')
+        billets_payes = billets.filter(statut='paye')
+
         context['billets'] = billets
-        context['billets_payes'] = billets.filter(statut='paye')
+        context['billets_payes'] = billets_payes
         context['billets_reserves'] = billets.filter(statut='reserve')
 
         # Calculer les statistiques
-        context['nb_billets_payes'] = billets.filter(statut='paye').count()
+        context['nb_billets_payes'] = billets_payes.count()
         context['nb_billets_reserves'] = billets.filter(statut='reserve').count()
-        context['montant_total'] = sum(b.montant for b in billets.filter(statut='paye'))
+        context['montant_total'] = sum(b.montant for b in billets_payes)
+
+        # Statistiques par moyen de paiement (uniquement billets payés)
+        context['paiements_cash'] = billets_payes.filter(moyen_paiement='cash').count()
+        context['paiements_wave'] = billets_payes.filter(moyen_paiement='wave').count()
+        context['paiements_orange'] = billets_payes.filter(moyen_paiement='orange_money').count()
+        context['paiements_mtn'] = billets_payes.filter(moyen_paiement='mtn_money').count()
+        context['paiements_moov'] = billets_payes.filter(moyen_paiement='moov_money').count()
 
         return context
 

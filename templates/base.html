@@ -57,7 +57,6 @@
                             <i class="bi bi-cash-stack me-1"></i> Point du jour
                         </a>
                     </li>
-                    {% if user.has_global_access or user.is_chef_gare %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                             <i class="bi bi-bar-chart me-1"></i> Rapports
@@ -82,8 +81,8 @@
                             <i class="bi bi-gear me-1"></i> Gestion
                         </a>
                         <ul class="dropdown-menu">
+                            {% if user.is_super_admin %}
                             <li><h6 class="dropdown-header">Configuration</h6></li>
-                            {% if user.has_global_access %}
                             <li>
                                 <a class="dropdown-item" href="{% url 'gares:gare_list' %}">
                                     <i class="bi bi-building me-2"></i> Gares
@@ -94,7 +93,6 @@
                                     <i class="bi bi-signpost-2 me-2"></i> Lignes
                                 </a>
                             </li>
-                            {% endif %}
                             <li>
                                 <a class="dropdown-item" href="{% url 'destinations:destination_list' %}">
                                     <i class="bi bi-geo-alt me-2"></i> Destinations
@@ -102,7 +100,6 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">Flotte</h6></li>
-                            {% if user.has_global_access %}
                             <li>
                                 <a class="dropdown-item" href="{% url 'vehicules:modele_list' %}">
                                     <i class="bi bi-bus-front me-2"></i> Modèles de véhicules
@@ -113,20 +110,6 @@
                                     <i class="bi bi-truck me-2"></i> Véhicules
                                 </a>
                             </li>
-                            {% endif %}
-                            <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header">Opérations</h6></li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'programmes:programme_list' %}">
-                                    <i class="bi bi-calendar-week me-2"></i> Programmes
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'voyages:voyage_list' %}">
-                                    <i class="bi bi-calendar-event me-2"></i> Gestion voyages
-                                </a>
-                            </li>
-                            {% if user.has_global_access %}
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">Personnel</h6></li>
                             <li>
@@ -144,10 +127,21 @@
                                     <i class="bi bi-person-check me-2"></i> Convoyeurs
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
                             {% endif %}
+                            <li><h6 class="dropdown-header">Opérations</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'programmes:programme_list' %}">
+                                    <i class="bi bi-calendar-week me-2"></i> Programmes
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'voyages:voyage_list' %}">
+                                    <i class="bi bi-calendar-event me-2"></i> Gestion voyages
+                                </a>
+                            </li>
                         </ul>
                     </li>
-                    {% endif %}
                     {% if user.is_superuser %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'admin:index' %}">
