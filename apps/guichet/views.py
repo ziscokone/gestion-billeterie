@@ -85,21 +85,29 @@ class VoyageListView(LoginRequiredMixin, ListView):
         else:  # 'actifs' par défaut
             statuts = ['programme', 'en_cours']
 
-        queryset = Voyage.objects.filter(
-            date_depart__gte=today,
-            statut__in=statuts
-        )
+        # Vérifier si une date spécifique est demandée
+        date_filter = self.request.GET.get('date')
+
+        if date_filter:
+            # Si une date est sélectionnée, afficher les voyages de cette date
+            queryset = Voyage.objects.filter(
+                date_depart=date_filter,
+                statut__in=statuts
+            )
+        else:
+            # Sinon, afficher les voyages à partir d'aujourd'hui
+            queryset = Voyage.objects.filter(
+                date_depart__gte=today,
+                statut__in=statuts
+            )
 
         if not user.has_global_access:
             queryset = queryset.filter(gare=user.gare)
 
         # Autres filtres
-        date_filter = self.request.GET.get('date')
         ligne_filter = self.request.GET.get('ligne')
         periode_filter = self.request.GET.get('periode')
 
-        if date_filter:
-            queryset = queryset.filter(date_depart=date_filter)
         if ligne_filter:
             queryset = queryset.filter(ligne_id=ligne_filter)
         if periode_filter:
