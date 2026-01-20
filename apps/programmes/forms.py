@@ -2,6 +2,7 @@ from django import forms
 from .models import ProgrammeDepart
 from apps.gares.models import Gare
 from apps.destinations.models import Destination
+from apps.lignes.models import Ligne
 
 
 class ProgrammeDepartForm(forms.ModelForm):
@@ -26,8 +27,11 @@ class ProgrammeDepartForm(forms.ModelForm):
                 self.fields['gare'].queryset = Gare.objects.filter(pk=self.user.gare.pk)
                 self.fields['gare'].initial = self.user.gare
                 self.fields['gare'].widget.attrs['readonly'] = True
+                # Filtrer les lignes pour n'afficher que celles de la gare de l'utilisateur
+                self.fields['ligne'].queryset = Ligne.objects.filter(gare=self.user.gare)
             else:
                 self.fields['gare'].queryset = Gare.objects.none()
+                self.fields['ligne'].queryset = Ligne.objects.none()
 
         # Filtrer les destinations par gare si une instance existe
         if self.instance and self.instance.pk and self.instance.gare:
