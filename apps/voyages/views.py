@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 import json
+from decimal import Decimal, InvalidOperation
 from datetime import timedelta
 from core.mixins import GestionRequiredMixin
 from .models import Voyage
@@ -212,11 +213,11 @@ class VoyageBordereauView(GestionRequiredMixin, TemplateView):
 
         # Récupérer les dépenses du voyage
         depenses = voyage.depenses.select_related('type_depense').order_by('type_depense__ordre', 'type_depense__nom')
-        total_depenses = sum(d.montant for d in depenses)
+        total_depenses = sum((d.montant for d in depenses), Decimal('0'))
 
         # Calculer les totaux
         montant_total_billets = sum(b.montant for b in billets.filter(statut='paye'))
-        recette_bagages = voyage.recette_bagages or 0
+        recette_bagages = voyage.recette_bagages or Decimal('0')
         total_recettes = voyage.get_total_recettes()
         benefice_net = voyage.get_benefice_net()
 
@@ -485,7 +486,7 @@ def get_voyage_depenses(request, pk):
         ]
 
         # Calculer le total des dépenses
-        total_depenses = sum(d.montant for d in depenses)
+        total_depenses = sum((d.montant for d in depenses), Decimal('0'))
 
         return JsonResponse({
             'success': True,
@@ -572,7 +573,7 @@ def add_voyage_depenses(request, pk):
                 erreurs.append(f"Erreur lors de l'enregistrement: {str(e)}")
 
         # Calculer le nouveau total
-        total_depenses = sum(d.montant for d in voyage.depenses.all())
+        total_depenses = sum((d.montant for d in voyage.depenses.all()), Decimal('0'))
 
         if erreurs:
             return JsonResponse({
@@ -653,13 +654,13 @@ def save_voyage_bagages(request, pk):
 
         # Validation du montant
         try:
-            montant = float(montant)
+            montant = Decimal(str(montant))
             if montant < 0:
                 return JsonResponse({
                     'success': False,
                     'error': 'Le montant ne peut pas être négatif'
                 }, status=400)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, InvalidOperation):
             return JsonResponse({
                 'success': False,
                 'error': 'Montant invalide'
@@ -672,7 +673,7 @@ def save_voyage_bagages(request, pk):
         # Calculer les totaux pour la réponse
         total_billets = voyage.get_montant_total()
         total_recettes = voyage.get_total_recettes()
-        total_depenses = sum(d.montant for d in voyage.depenses.all())
+        total_depenses = sum((d.montant for d in voyage.depenses.all()), Decimal('0'))
         benefice_net = voyage.get_benefice_net()
 
         return JsonResponse({
