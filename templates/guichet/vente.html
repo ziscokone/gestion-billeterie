@@ -256,18 +256,23 @@
     </div>
 </div>
 
-<!-- Modal d'impression -->
+<!-- Container pour les tickets (toujours présent, caché si pas utilisé) -->
+<div id="ticketsContainer" style="position: absolute; left: -9999px;">
+    <!-- Les tickets seront insérés ici -->
+</div>
+
+<!-- Modal d'impression (pour les réservations uniquement) -->
 <div class="modal fade" id="printModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-printer me-2"></i>Ticket(s) créé(s)
+                    <i class="bi bi-printer me-2"></i>Réservation créée
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="ticketsContainer">
-                <!-- Les tickets seront insérés ici -->
+            <div class="modal-body" id="ticketsContainerModal">
+                <!-- Les tickets de réservation seront insérés ici -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -380,17 +385,18 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Afficher les tickets
-                displayTickets(data.billets);
-
-                // Si c'est une vente (paiement), lancer l'impression automatique
+                // Si c'est une vente (paiement), afficher dans le container caché et imprimer
                 if (submitBtn.value === 'true') {
+                    // Afficher les tickets dans le container caché
+                    displayTickets(data.billets);
+
                     // Petit délai pour que le DOM se mette à jour
                     setTimeout(() => {
                         window.print();
-                    }, 100);
+                    }, 150);
                 } else {
-                    // Si c'est une réservation, afficher le modal
+                    // Si c'est une réservation, afficher dans le modal
+                    displayTicketsInModal(data.billets);
                     printModal.show();
                 }
 
@@ -421,9 +427,44 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Affichage des tickets
+    // Affichage des tickets dans le container caché (pour impression)
     function displayTickets(billets) {
         const container = document.getElementById('ticketsContainer');
+        container.innerHTML = billets.map(billet => `
+            <div class="ticket-preview mb-3">
+                <div class="ticket-header-row">
+                    <div class="ticket-logo">
+                        ${billet.compagnie_logo
+                            ? `<img src="${billet.compagnie_logo}" alt="Logo" class="ticket-logo-img">`
+                            : `<div class="ticket-logo-placeholder"><i class="bi bi-bus-front"></i></div>`
+                        }
+                    </div>
+                    <div class="ticket-gare-info">
+                        <strong class="ticket-compagnie-nom">${billet.compagnie_nom || 'COMPAGNIE DE TRANSPORT'}</strong>
+                        ${billet.gare_telephone ? `<div class="ticket-gare-tel">Tel: ${billet.gare_telephone}</div>` : ''}
+                        ${billet.gare_adresse ? `<div class="ticket-gare-adresse">${billet.gare_adresse}</div>` : ''}
+                    </div>
+                </div>
+                <div class="ticket-body">
+                    <div class="ticket-row"><span>N° Ticket:</span><strong>${billet.numero}</strong></div>
+                    <div class="ticket-row"><span>N° Depart:</span><strong>${billet.numero_depart || 'N/A'}</strong></div>
+                    <div class="ticket-row"><span>Client:</span><span>${billet.client_nom}</span></div>
+                    <div class="ticket-row"><span>Siege:</span><strong class="ticket-siege">${billet.numero_siege}</strong></div>
+                    <hr>
+                    <div class="ticket-row"><span>Ligne:</span><span>${billet.ligne}</span></div>
+                    <div class="ticket-row"><span>Destination:</span><strong>${billet.destination || 'N/A'}</strong></div>
+                    <div class="ticket-row"><span>Date:</span><span>${billet.date_depart}</span></div>
+                    <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
+                    <hr>
+                    <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Affichage des tickets dans le modal (pour réservations)
+    function displayTicketsInModal(billets) {
+        const container = document.getElementById('ticketsContainerModal');
         container.innerHTML = billets.map(billet => `
             <div class="ticket-preview mb-3">
                 <div class="ticket-header-row">

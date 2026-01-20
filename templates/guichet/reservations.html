@@ -141,35 +141,15 @@
     </div>
 </div>
 
-<!-- Modal d'impression -->
-<div class="modal fade" id="printModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-check-circle text-success me-2"></i>Paiement effectué
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="ticketContainer">
-                <!-- Le ticket sera inséré ici -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                <button type="button" class="btn btn-primary" onclick="window.print()">
-                    <i class="bi bi-printer me-2"></i>Imprimer
-                </button>
-            </div>
-        </div>
-    </div>
+<!-- Container pour le ticket (toujours présent, caché si pas utilisé) -->
+<div id="ticketContainer" style="position: absolute; left: -9999px;">
+    <!-- Le ticket sera inséré ici -->
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const printModal = new bootstrap.Modal(document.getElementById('printModal'));
-
     // Payer une réservation
     document.querySelectorAll('.btn-payer').forEach(btn => {
         btn.addEventListener('click', function() {
