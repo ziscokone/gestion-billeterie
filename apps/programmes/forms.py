@@ -1,7 +1,6 @@
 from django import forms
 from .models import ProgrammeDepart
 from apps.gares.models import Gare
-from apps.destinations.models import Destination
 from apps.lignes.models import Ligne
 
 
@@ -33,11 +32,6 @@ class ProgrammeDepartForm(forms.ModelForm):
                 self.fields['gare'].queryset = Gare.objects.none()
                 self.fields['ligne'].queryset = Ligne.objects.none()
 
-        # Filtrer les destinations par gare si une instance existe
-        if self.instance and self.instance.pk and self.instance.gare:
-            self.fields['destination'].queryset = Destination.objects.filter(
-                gare=self.instance.gare
-            )
 
         # Initialiser les champs de jours si l'instance existe
         if self.instance and self.instance.pk and self.instance.jours_actifs:
@@ -57,13 +51,12 @@ class ProgrammeDepartForm(forms.ModelForm):
     class Meta:
         model = ProgrammeDepart
         fields = [
-            'gare', 'ligne', 'destination', 'periode', 'heure_depart',
+            'gare', 'ligne', 'periode', 'heure_depart',
             'numero_depart', 'vehicule_defaut', 'actif'
         ]
         widgets = {
             'gare': forms.Select(attrs={'class': 'form-select'}),
             'ligne': forms.Select(attrs={'class': 'form-select'}),
-            'destination': forms.Select(attrs={'class': 'form-select'}),
             'periode': forms.Select(attrs={'class': 'form-select'}),
             'heure_depart': forms.TimeInput(attrs={
                 'class': 'form-control',
@@ -81,7 +74,6 @@ class ProgrammeDepartForm(forms.ModelForm):
         labels = {
             'gare': 'Gare de départ',
             'ligne': 'Ligne',
-            'destination': 'Destination',
             'periode': 'Période',
             'heure_depart': 'Heure de départ',
             'numero_depart': 'Numéro de départ',
@@ -119,21 +111,6 @@ class ProgrammeDepartForm(forms.ModelForm):
             )
 
         cleaned_data['jours_actifs'] = jours_actifs
-
-        # Vérifier que la destination correspond à la gare et à la ligne
-        gare = cleaned_data.get('gare')
-        ligne = cleaned_data.get('ligne')
-        destination = cleaned_data.get('destination')
-
-        if gare and ligne and destination:
-            if destination.gare != gare:
-                raise forms.ValidationError(
-                    'La destination doit correspondre à la gare de départ sélectionnée.'
-                )
-            if destination.ligne != ligne:
-                raise forms.ValidationError(
-                    'La destination doit correspondre à la ligne sélectionnée.'
-                )
 
         return cleaned_data
 

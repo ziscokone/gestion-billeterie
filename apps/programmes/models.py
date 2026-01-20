@@ -44,7 +44,9 @@ class ProgrammeDepart(models.Model):
         'destinations.Destination',
         on_delete=models.CASCADE,
         related_name='programmes',
-        verbose_name="Destination"
+        verbose_name="Destination",
+        null=True,
+        blank=True
     )
     periode = models.CharField(
         max_length=10,
