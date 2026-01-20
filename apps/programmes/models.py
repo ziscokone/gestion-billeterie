@@ -130,7 +130,6 @@ class ProgrammeDepart(models.Model):
             voyage = Voyage.objects.create(
                 gare=self.gare,
                 ligne=self.ligne,
-                destination=self.destination,
                 date_depart=date_voyage,
                 heure_depart=self.heure_depart,
                 periode=self.periode,
