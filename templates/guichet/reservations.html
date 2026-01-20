@@ -222,7 +222,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                     `;
-                    printModal.show();
+
+                    // Lancer l'impression automatique
+                    setTimeout(() => {
+                        window.print();
+                    }, 100);
 
                     // Supprimer la ligne
                     row.remove();

@@ -382,7 +382,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 // Afficher les tickets
                 displayTickets(data.billets);
-                printModal.show();
+
+                // Si c'est une vente (paiement), lancer l'impression automatique
+                if (submitBtn.value === 'true') {
+                    // Petit délai pour que le DOM se mette à jour
+                    setTimeout(() => {
+                        window.print();
+                    }, 100);
+                } else {
+                    // Si c'est une réservation, afficher le modal
+                    printModal.show();
+                }
 
                 // Rafraîchir la grille des sièges
                 refreshSeats();
@@ -393,6 +403,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     s.classList.remove('selected');
                 });
                 siegeInput.value = '';
+                montantAffiche.textContent = '-';
+                montantAffiche.classList.remove('text-success');
             } else {
                 alert(data.error || 'Une erreur est survenue');
             }
@@ -485,7 +497,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     displayTickets([data.billet]);
-                    printModal.show();
+                    // Lancer l'impression automatique pour paiement de réservation
+                    setTimeout(() => {
+                        window.print();
+                    }, 100);
                     refreshSeats();
                     // Supprimer la ligne de réservation
                     this.closest('tr').remove();

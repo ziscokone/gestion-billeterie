@@ -695,16 +695,11 @@ a:hover {
         width: 80mm;
         box-sizing: border-box;
         page-break-inside: avoid;
+    }
+
+    /* Saut de page uniquement entre plusieurs tickets (vente multiple) */
+    .ticket-preview + .ticket-preview {
         page-break-before: always;
-    }
-
-    .ticket-preview:first-child {
-        page-break-before: auto;
-    }
-
-    /* Saut de page entre les tickets */
-    .ticket-preview:not(:last-child) {
-        page-break-after: always;
     }
 
     .ticket-preview.ticket-duplicata {
