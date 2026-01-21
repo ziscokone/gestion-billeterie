@@ -309,11 +309,17 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
         context['vehicules_stats'] = vehicules_stats
 
         # Répartition par type de réparation
-        types_stats = {}
+        types_stats = []
+        cout_total_types = context['cout_total']
         for type_code, type_label in ReparationVehicule.TYPE_REPARATION_CHOICES:
             cout = reparations.filter(type_reparation=type_code).aggregate(total=Sum('montant'))['total'] or 0
             if cout > 0:
-                types_stats[type_label] = cout
+                pourcentage = (cout / cout_total_types * 100) if cout_total_types > 0 else 0
+                types_stats.append({
+                    'label': type_label,
+                    'cout': cout,
+                    'pourcentage': pourcentage
+                })
 
         context['types_stats'] = types_stats
 

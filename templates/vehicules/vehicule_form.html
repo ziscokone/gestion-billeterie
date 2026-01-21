@@ -29,9 +29,11 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="reparations-tab" data-bs-toggle="tab" data-bs-target="#reparations" type="button" role="tab" aria-controls="reparations" aria-selected="false">
                             <i class="bi bi-tools me-2"></i>Historique réparations
-                            {% if form.instance.get_nombre_reparations > 0 %}
-                                <span class="badge bg-danger">{{ form.instance.get_nombre_reparations }}</span>
+                            {% with nb_reparations=form.instance.reparations.count %}
+                            {% if nb_reparations > 0 %}
+                                <span class="badge bg-danger">{{ nb_reparations }}</span>
                             {% endif %}
+                            {% endwith %}
                         </button>
                     </li>
                 </ul>
