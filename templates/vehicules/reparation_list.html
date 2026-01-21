@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Gestion des Réparations{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-tools me-2"></i>Gestion des Réparations
+                </h4>
+                <div>
+                    <a href="{% url 'vehicules:rapport_reparations' %}" class="btn btn-light btn-sm me-2">
+                        <i class="bi bi-bar-chart-fill me-1"></i>Voir le rapport
+                    </a>
+                    <a href="{% url 'vehicules:reparation_create' %}" class="btn btn-success btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Ajouter une réparation
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Filtres -->
+            <div class="card mb-4 border-secondary">
+                <div class="card-header bg-secondary bg-opacity-10">
+                    <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtres</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Véhicule</label>
+                            <select name="vehicule" class="form-select">
+                                <option value="">Tous les véhicules</option>
+                                {% for vehicule in vehicules %}
+                                    <option value="{{ vehicule.pk }}" {% if vehicule_filtre == vehicule.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ vehicule.immatriculation }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Type</label>
+                            <select name="type" class="form-select">
+                                <option value="">Tous types</option>
+                                {% for code, label in types_reparation %}
+                                    <option value="{{ code }}" {% if type_filtre == code %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Statut</label>
+                            <select name="statut" class="form-select">
+                                <option value="">Tous statuts</option>
+                                {% for code, label in statuts %}
+                                    <option value="{{ code }}" {% if statut_filtre == code %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Date début</label>
+                            <input type="date" name="date_debut" class="form-control" value="{{ date_debut_filtre }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Date fin</label>
+                            <input type="date" name="date_fin" class="form-control" value="{{ date_fin_filtre }}">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                    {% if cout_total_periode > 0 %}
+                    <div class="alert alert-info mt-3 mb-0">
+                        <strong>Coût total période sélectionnée :</strong> {{ cout_total_periode|floatformat:0|intcomma }} FCFA
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tableau des réparations -->
+            {% if reparations %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Véhicule</th>
+                            <th>Type</th>
+                            <th>Montant</th>
+                            <th>Garage</th>
+                            <th>Statut</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reparation in reparations %}
+                        <tr>
+                            <td>{{ reparation.date_reparation|date:"d/m/Y" }}</td>
+                            <td>
+                                <strong>{{ reparation.vehicule.immatriculation }}</strong><br>
+                                <small class="text-muted">{{ reparation.vehicule.modele.nom }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ reparation.get_type_reparation_display }}</span>
+                            </td>
+                            <td><strong class="text-primary">{{ reparation.montant|floatformat:0|intcomma }} F</strong></td>
+                            <td>{{ reparation.garage_prestataire }}</td>
+                            <td>
+                                {% if reparation.statut == 'terminee' %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Terminée</span>
+                                {% elif reparation.statut == 'en_cours' %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> En cours</span>
+                                {% else %}
+                                    <span class="badge bg-info"><i class="bi bi-clock"></i> En attente</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'vehicules:reparation_detail' reparation.pk %}" class="btn btn-outline-primary" title="Voir">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'vehicules:reparation_update' reparation.pk %}" class="btn btn-outline-warning" title="Modifier">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'vehicules:reparation_delete' reparation.pk %}" class="btn btn-outline-danger" title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Navigation des pages">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if vehicule_filtre %}&vehicule={{ vehicule_filtre }}{% endif %}{% if type_filtre %}&type={{ type_filtre }}{% endif %}{% if statut_filtre %}&statut={{ statut_filtre }}{% endif %}{% if date_debut_filtre %}&date_debut={{ date_debut_filtre }}{% endif %}{% if date_fin_filtre %}&date_fin={{ date_fin_filtre }}{% endif %}">Première</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if vehicule_filtre %}&vehicule={{ vehicule_filtre }}{% endif %}{% if type_filtre %}&type={{ type_filtre }}{% endif %}{% if statut_filtre %}&statut={{ statut_filtre }}{% endif %}{% if date_debut_filtre %}&date_debut={{ date_debut_filtre }}{% endif %}{% if date_fin_filtre %}&date_fin={{ date_fin_filtre }}{% endif %}">Précédente</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if vehicule_filtre %}&vehicule={{ vehicule_filtre }}{% endif %}{% if type_filtre %}&type={{ type_filtre }}{% endif %}{% if statut_filtre %}&statut={{ statut_filtre }}{% endif %}{% if date_debut_filtre %}&date_debut={{ date_debut_filtre }}{% endif %}{% if date_fin_filtre %}&date_fin={{ date_fin_filtre }}{% endif %}">Suivante</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if vehicule_filtre %}&vehicule={{ vehicule_filtre }}{% endif %}{% if type_filtre %}&type={{ type_filtre }}{% endif %}{% if statut_filtre %}&statut={{ statut_filtre }}{% endif %}{% if date_debut_filtre %}&date_debut={{ date_debut_filtre }}{% endif %}{% if date_fin_filtre %}&date_fin={{ date_fin_filtre }}{% endif %}">Dernière</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Aucune réparation trouvée avec ces critères.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ModeleVehicule, Vehicule
+from .models import ModeleVehicule, Vehicule, ReparationVehicule
 
 
 @admin.register(ModeleVehicule)
@@ -23,19 +23,45 @@ class ModeleVehiculeAdmin(admin.ModelAdmin):
 
 @admin.register(Vehicule)
 class VehiculeAdmin(admin.ModelAdmin):
-    list_display = ('immatriculation', 'modele', 'annee_mise_service', 'actif')
-    list_filter = ('modele', 'actif', 'annee_mise_service')
-    search_fields = ('immatriculation', 'modele__nom')
+    list_display = ('immatriculation', 'modele', 'annee_mise_service', 'actif', 'type_carburant')
+    list_filter = ('modele', 'actif', 'annee_mise_service', 'type_carburant', 'type_boite')
+    search_fields = ('immatriculation', 'modele__nom', 'numero_chassis')
     ordering = ('immatriculation',)
 
     fieldsets = (
         ('Informations générales', {
-            'fields': ('immatriculation', 'modele', 'compagnie')
+            'fields': ('immatriculation', 'modele', 'compagnie', 'actif')
         }),
-        ('Détails', {
-            'fields': ('annee_mise_service', 'notes')
+        ('Caractéristiques techniques', {
+            'fields': ('numero_chassis', 'annee_fabrication', 'date_mise_circulation', 'type_carburant', 'type_boite')
         }),
-        ('Statut', {
-            'fields': ('actif',)
+        ('Documents & conformité légale', {
+            'fields': ('compagnie_assurance', 'date_expiration_assurance', 'date_expiration_visite_technique',
+                      'date_expiration_carte_grise', 'date_expiration_licence_transport')
+        }),
+        ('Notes', {
+            'fields': ('notes',)
+        }),
+    )
+
+
+@admin.register(ReparationVehicule)
+class ReparationVehiculeAdmin(admin.ModelAdmin):
+    list_display = ('vehicule', 'date_reparation', 'type_reparation', 'montant', 'garage_prestataire', 'statut')
+    list_filter = ('type_reparation', 'statut', 'date_reparation')
+    search_fields = ('vehicule__immatriculation', 'garage_prestataire', 'description')
+    ordering = ('-date_reparation',)
+    date_hierarchy = 'date_reparation'
+
+    fieldsets = (
+        ('Informations générales', {
+            'fields': ('vehicule', 'date_reparation', 'type_reparation', 'statut')
+        }),
+        ('Détails de la réparation', {
+            'fields': ('description', 'garage_prestataire', 'montant', 'kilometrage')
+        }),
+        ('Pièces et documents', {
+            'fields': ('pieces_remplacees', 'facture'),
+            'classes': ('collapse',)
         }),
     )

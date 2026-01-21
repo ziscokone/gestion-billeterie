@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Détails Réparation{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Détails de la réparation
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Véhicule</h6>
+                            <p class="lead">
+                                <i class="bi bi-bus-front me-2"></i>
+                                <strong>{{ reparation.vehicule.immatriculation }}</strong><br>
+                                <small class="text-muted">{{ reparation.vehicule.modele }}</small>
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h6 class="text-muted">Date</h6>
+                            <p class="lead">
+                                <i class="bi bi-calendar-event me-2"></i>
+                                {{ reparation.date_reparation|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Type de réparation</h6>
+                            <p><span class="badge bg-secondary fs-6">{{ reparation.get_type_reparation_display }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Statut</h6>
+                            <p>
+                                {% if reparation.statut == 'terminee' %}
+                                    <span class="badge bg-success fs-6"><i class="bi bi-check-circle"></i> Terminée</span>
+                                {% elif reparation.statut == 'en_cours' %}
+                                    <span class="badge bg-warning text-dark fs-6"><i class="bi bi-hourglass-split"></i> En cours</span>
+                                {% else %}
+                                    <span class="badge bg-info fs-6"><i class="bi bi-clock"></i> En attente</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Garage/Prestataire</h6>
+                            <p><i class="bi bi-building me-2"></i>{{ reparation.garage_prestataire }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Montant</h6>
+                            <p class="text-primary fs-4 fw-bold">
+                                <i class="bi bi-currency-exchange me-2"></i>{{ reparation.montant|floatformat:0|intcomma }} FCFA
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if reparation.kilometrage %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-muted">Kilométrage</h6>
+                            <p><i class="bi bi-speedometer2 me-2"></i>{{ reparation.kilometrage|intcomma }} km</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-muted">Description</h6>
+                            <p class="border-start border-4 border-info ps-3">{{ reparation.description }}</p>
+                        </div>
+                    </div>
+
+                    {% if reparation.pieces_remplacees %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-muted">Pièces remplacées</h6>
+                            <p class="border-start border-4 border-warning ps-3">{{ reparation.pieces_remplacees }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if reparation.facture %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-muted">Facture/Reçu</h6>
+                            <p>
+                                <a href="{{ reparation.facture.url }}" target="_blank" class="btn btn-outline-primary">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>Télécharger la facture
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-12 text-muted small">
+                            <p class="mb-0">
+                                <i class="bi bi-clock-history me-1"></i>
+                                Créé le {{ reparation.date_creation|date:"d/m/Y à H:i" }}
+                            </p>
+                            {% if reparation.date_modification %}
+                            <p class="mb-0">
+                                <i class="bi bi-pencil me-1"></i>
+                                Modifié le {{ reparation.date_modification|date:"d/m/Y à H:i" }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'vehicules:reparation_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Retour
+                        </a>
+                        <div>
+                            <a href="{% url 'vehicules:reparation_update' reparation.pk %}" class="btn btn-warning me-2">
+                                <i class="bi bi-pencil me-1"></i> Modifier
+                            </a>
+                            <a href="{% url 'vehicules:reparation_delete' reparation.pk %}" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i> Supprimer
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

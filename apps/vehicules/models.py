@@ -146,6 +146,22 @@ class ModeleVehicule(models.Model):
 
 class Vehicule(models.Model):
     """Modèle représentant un véhicule de la compagnie."""
+
+    # Choix pour les champs
+    TYPE_CARBURANT_CHOICES = [
+        ('diesel', 'Diesel'),
+        ('essence', 'Essence'),
+        ('hybride', 'Hybride'),
+        ('electrique', 'Électrique'),
+        ('gnv', 'GNV (Gaz Naturel)'),
+    ]
+
+    TYPE_BOITE_CHOICES = [
+        ('manuelle', 'Manuelle'),
+        ('automatique', 'Automatique'),
+    ]
+
+    # Informations générales
     immatriculation = models.CharField(
         max_length=20,
         unique=True,
@@ -170,6 +186,63 @@ class Vehicule(models.Model):
     )
     actif = models.BooleanField(default=True, verbose_name="Actif")
     notes = models.TextField(blank=True, verbose_name="Notes")
+
+    # Caractéristiques techniques
+    numero_chassis = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Numéro de châssis (VIN)"
+    )
+    annee_fabrication = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name="Année de fabrication"
+    )
+    date_mise_circulation = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Date de mise en circulation"
+    )
+    type_carburant = models.CharField(
+        max_length=20,
+        choices=TYPE_CARBURANT_CHOICES,
+        blank=True,
+        verbose_name="Type de carburant"
+    )
+    type_boite = models.CharField(
+        max_length=20,
+        choices=TYPE_BOITE_CHOICES,
+        blank=True,
+        verbose_name="Type de boîte"
+    )
+
+    # Documents & conformité légale
+    compagnie_assurance = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Compagnie d'assurance"
+    )
+    date_expiration_assurance = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Date d'expiration assurance"
+    )
+    date_expiration_visite_technique = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Date d'expiration visite technique"
+    )
+    date_expiration_carte_grise = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Date d'expiration carte grise"
+    )
+    date_expiration_licence_transport = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Date d'expiration licence de transport"
+    )
+
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
 
@@ -189,3 +262,94 @@ class Vehicule(models.Model):
     def get_sieges_vendables(self):
         """Retourne la liste des sièges vendables pour ce véhicule."""
         return self.modele.get_sieges_vendables()
+
+    def get_cout_total_reparations(self):
+        """Retourne le coût total des réparations du véhicule."""
+        from django.db.models import Sum
+        total = self.reparations.aggregate(total=Sum('montant'))['total']
+        return total or 0
+
+    def get_nombre_reparations(self):
+        """Retourne le nombre total de réparations du véhicule."""
+        return self.reparations.count()
+
+    def get_derniere_reparation(self):
+        """Retourne la dernière réparation effectuée."""
+        return self.reparations.order_by('-date_reparation').first()
+
+    def is_critique(self, seuil=2000000):
+        """Vérifie si le véhicule a dépassé le seuil critique de coûts."""
+        return self.get_cout_total_reparations() > seuil
+
+
+class ReparationVehicule(models.Model):
+    """Modèle représentant une réparation effectuée sur un véhicule."""
+
+    TYPE_REPARATION_CHOICES = [
+        ('mecanique', 'Mécanique'),
+        ('carrosserie', 'Carrosserie'),
+        ('electrique', 'Électrique'),
+        ('pneumatiques', 'Pneumatiques'),
+        ('revision', 'Révision'),
+        ('autre', 'Autre'),
+    ]
+
+    STATUT_CHOICES = [
+        ('en_attente', 'En attente'),
+        ('en_cours', 'En cours'),
+        ('terminee', 'Terminée'),
+    ]
+
+    vehicule = models.ForeignKey(
+        Vehicule,
+        on_delete=models.CASCADE,
+        related_name='reparations',
+        verbose_name="Véhicule"
+    )
+    date_reparation = models.DateField(verbose_name="Date de réparation")
+    type_reparation = models.CharField(
+        max_length=20,
+        choices=TYPE_REPARATION_CHOICES,
+        verbose_name="Type de réparation"
+    )
+    description = models.TextField(verbose_name="Description")
+    garage_prestataire = models.CharField(
+        max_length=200,
+        verbose_name="Garage/Prestataire"
+    )
+    montant = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Montant (FCFA)"
+    )
+    kilometrage = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name="Kilométrage"
+    )
+    pieces_remplacees = models.TextField(
+        blank=True,
+        verbose_name="Pièces remplacées"
+    )
+    facture = models.FileField(
+        upload_to='reparations/factures/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name="Facture/Reçu"
+    )
+    statut = models.CharField(
+        max_length=20,
+        choices=STATUT_CHOICES,
+        default='terminee',
+        verbose_name="Statut"
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Réparation de véhicule"
+        verbose_name_plural = "Réparations de véhicules"
+        ordering = ['-date_reparation']
+
+    def __str__(self):
+        return f"{self.vehicule.immatriculation} - {self.get_type_reparation_display()} - {self.date_reparation}"

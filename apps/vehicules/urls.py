@@ -15,4 +15,14 @@ urlpatterns = [
     path('ajouter/', views.VehiculeCreateView.as_view(), name='vehicule_create'),
     path('<int:pk>/modifier/', views.VehiculeUpdateView.as_view(), name='vehicule_update'),
     path('<int:pk>/supprimer/', views.VehiculeDeleteView.as_view(), name='vehicule_delete'),
+
+    # Réparations
+    path('reparations/', views.ReparationVehiculeListView.as_view(), name='reparation_list'),
+    path('reparations/ajouter/', views.ReparationVehiculeCreateView.as_view(), name='reparation_create'),
+    path('reparations/<int:pk>/', views.ReparationVehiculeDetailView.as_view(), name='reparation_detail'),
+    path('reparations/<int:pk>/modifier/', views.ReparationVehiculeUpdateView.as_view(), name='reparation_update'),
+    path('reparations/<int:pk>/supprimer/', views.ReparationVehiculeDeleteView.as_view(), name='reparation_delete'),
+
+    # Rapport analytique
+    path('rapport/', views.RapportReparationsView.as_view(), name='rapport_reparations'),
 ]

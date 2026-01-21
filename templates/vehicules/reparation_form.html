@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouvelle{% endif %} Réparation{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-tools me-2"></i>
+                        {% if form.instance.pk %}
+                            Modifier la réparation
+                        {% else %}
+                            Nouvelle réparation
+                        {% endif %}
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.vehicule.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-bus-front me-1"></i>{{ form.vehicule.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.vehicule }}
+                                {% if form.vehicule.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.vehicule.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.date_reparation.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-calendar-event me-1"></i>{{ form.date_reparation.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.date_reparation }}
+                                {% if form.date_reparation.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.date_reparation.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.type_reparation.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-wrench me-1"></i>{{ form.type_reparation.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.type_reparation }}
+                                {% if form.type_reparation.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.type_reparation.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.statut.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-flag me-1"></i>{{ form.statut.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.statut }}
+                                {% if form.statut.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.statut.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-8 mb-3">
+                                <label for="{{ form.garage_prestataire.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-building me-1"></i>{{ form.garage_prestataire.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.garage_prestataire }}
+                                {% if form.garage_prestataire.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.garage_prestataire.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.montant.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-currency-exchange me-1"></i>{{ form.montant.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.montant }}
+                                {% if form.montant.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.montant.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.kilometrage.id_for_label }}" class="form-label">
+                                    <i class="bi bi-speedometer2 me-1"></i>{{ form.kilometrage.label }}
+                                </label>
+                                {{ form.kilometrage }}
+                                {% if form.kilometrage.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.kilometrage.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.facture.id_for_label }}" class="form-label">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>{{ form.facture.label }}
+                                </label>
+                                {{ form.facture }}
+                                {% if form.facture.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.facture.errors }}
+                                    </div>
+                                {% endif %}
+                                {% if form.instance.facture %}
+                                    <div class="form-text">
+                                        Fichier actuel: <a href="{{ form.instance.facture.url }}" target="_blank">{{ form.instance.facture.name }}</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-file-text me-1"></i>{{ form.description.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.pieces_remplacees.id_for_label }}" class="form-label">
+                                    <i class="bi bi-gear-fill me-1"></i>{{ form.pieces_remplacees.label }}
+                                </label>
+                                {{ form.pieces_remplacees }}
+                                {% if form.pieces_remplacees.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.pieces_remplacees.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'vehicules:reparation_list' %}" class="btn btn-danger text-white fw-bold">
+                                <i class="bi bi-arrow-left me-1"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-success fw-bold">
+                                <i class="bi bi-check-circle me-1"></i>
+                                {% if form.instance.pk %}Modifier{% else %}Enregistrer{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

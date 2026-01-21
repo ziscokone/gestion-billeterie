@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Rapport Analyse Réparations{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0">
+                <i class="bi bi-bar-chart-fill me-2"></i>Analyse des Réparations Véhicules
+            </h4>
+        </div>
+
+        <div class="card-body">
+            <!-- Filtres de période -->
+            <div class="card mb-4 border-secondary">
+                <div class="card-header bg-secondary bg-opacity-10">
+                    <h6 class="mb-0"><i class="bi bi-calendar-range me-2"></i>Période d'analyse</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Date début</label>
+                            <input type="date" name="date_debut" class="form-control" value="{{ date_debut }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Date fin</label>
+                            <input type="date" name="date_fin" class="form-control" value="{{ date_fin }}" required>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search me-1"></i> Analyser
+                            </button>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <a href="{% url 'vehicules:reparation_list' %}" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-arrow-left me-1"></i> Retour aux réparations
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Statistiques globales -->
+            <div class="card mb-4 border-primary">
+                <div class="card-header bg-primary bg-opacity-10">
+                    <h5 class="mb-0 text-primary"><i class="bi bi-graph-up me-2"></i>Statistiques globales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-primary bg-opacity-10 border-primary">
+                                <div class="card-body">
+                                    <i class="bi bi-currency-exchange text-primary" style="font-size: 3rem;"></i>
+                                    <h2 class="mt-2 mb-0 text-primary">{{ cout_total|floatformat:0|intcomma }} F</h2>
+                                    <p class="text-muted mb-0">Coût total</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-warning bg-opacity-10 border-warning">
+                                <div class="card-body">
+                                    <i class="bi bi-tools text-warning" style="font-size: 3rem;"></i>
+                                    <h2 class="mt-2 mb-0 text-warning">{{ nb_reparations }}</h2>
+                                    <p class="text-muted mb-0">Réparations</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-info bg-opacity-10 border-info">
+                                <div class="card-body">
+                                    <i class="bi bi-bus-front text-info" style="font-size: 3rem;"></i>
+                                    <h2 class="mt-2 mb-0 text-info">{{ nb_vehicules }}</h2>
+                                    <p class="text-muted mb-0">Véhicules concernés</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Véhicules à surveiller -->
+            {% if vehicules_critiques %}
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Véhicules critiques (> 2,000,000 FCFA)</h5>
+                </div>
+                <div class="card-body">
+                    {% for vehicule_stat in vehicules_critiques %}
+                    <div class="alert alert-danger">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="mb-1">
+                                    <i class="bi bi-bus-front me-2"></i>
+                                    <strong>{{ vehicule_stat.vehicule.immatriculation }}</strong> - {{ vehicule_stat.vehicule.modele }}
+                                </h6>
+                                <p class="mb-1">
+                                    <strong>Coût total :</strong> {{ vehicule_stat.cout_total|floatformat:0|intcomma }} FCFA |
+                                    <strong>Réparations :</strong> {{ vehicule_stat.nb_reparations }} |
+                                    <strong>Coût moyen :</strong> {{ vehicule_stat.cout_moyen|floatformat:0|intcomma }} FCFA
+                                </p>
+                                <p class="mb-0 text-danger">
+                                    <strong>⚠️ Recommandation :</strong> Envisager la vente ou le remplacement de ce véhicule
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="{% url 'vehicules:vehicule_update' vehicule_stat.vehicule.pk %}" class="btn btn-sm btn-outline-danger me-2">
+                                    <i class="bi bi-eye me-1"></i>Voir détails
+                                </a>
+                                <a href="{% url 'vehicules:vehicule_update' vehicule_stat.vehicule.pk %}" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-x-circle me-1"></i>Désactiver
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tableau comparatif par véhicule -->
+            {% if vehicules_stats %}
+            <div class="card mb-4">
+                <div class="card-header bg-info bg-opacity-10">
+                    <h5 class="mb-0 text-info"><i class="bi bi-table me-2"></i>Tableau comparatif par véhicule</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Véhicule</th>
+                                    <th>Modèle</th>
+                                    <th class="text-center">Nb réparations</th>
+                                    <th class="text-end">Coût total</th>
+                                    <th class="text-end">Coût moyen</th>
+                                    <th class="text-center">Statut</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vehicule_stat in vehicules_stats %}
+                                <tr>
+                                    <td><strong>{{ vehicule_stat.vehicule.immatriculation }}</strong></td>
+                                    <td>{{ vehicule_stat.vehicule.modele.nom }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ vehicule_stat.nb_reparations }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-primary">{{ vehicule_stat.cout_total|floatformat:0|intcomma }} F</strong>
+                                    </td>
+                                    <td class="text-end">{{ vehicule_stat.cout_moyen|floatformat:0|intcomma }} F</td>
+                                    <td class="text-center">
+                                        {% if vehicule_stat.niveau_alerte == 'critique' %}
+                                            <span class="badge bg-danger fs-6">🔴 Critique</span>
+                                        {% elif vehicule_stat.niveau_alerte == 'surveillance' %}
+                                            <span class="badge bg-warning text-dark fs-6">🟡 Surveillance</span>
+                                        {% else %}
+                                            <span class="badge bg-success fs-6">🟢 Normal</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'vehicules:vehicule_update' vehicule_stat.vehicule.pk %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Détails
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3">
+                        <p class="mb-0">
+                            <span class="badge bg-danger me-2">🔴 Critique</span> > 2,000,000 FCFA
+                            <span class="badge bg-warning text-dark mx-2">🟡 Surveillance</span> 1,000,000 - 2,000,000 FCFA
+                            <span class="badge bg-success ms-2">🟢 Normal</span> < 1,000,000 FCFA
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Répartition par type de réparation -->
+            {% if types_stats %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning bg-opacity-10">
+                    <h5 class="mb-0 text-warning"><i class="bi bi-pie-chart me-2"></i>Répartition par type de réparation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for type_label, cout in types_stats.items %}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 border rounded">
+                                <div>
+                                    <h6 class="mb-0">{{ type_label }}</h6>
+                                </div>
+                                <div class="text-end">
+                                    <strong class="text-primary fs-5">{{ cout|floatformat:0|intcomma }} F</strong><br>
+                                    <small class="text-muted">{{ cout|floatformat:2|intcomma }} %</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not vehicules_stats %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Aucune réparation trouvée pour cette période.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

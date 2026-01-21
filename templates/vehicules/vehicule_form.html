@@ -5,17 +5,42 @@
 {% block content %}
 <div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
+                        <i class="bi bi-bus-front me-2"></i>
                         {% if form.instance.pk %}
-                            Modifier le véhicule
+                            Modifier le véhicule - {{ form.instance.immatriculation }}
                         {% else %}
                             Nouveau véhicule
                         {% endif %}
                     </h4>
                 </div>
+
+                {% if form.instance.pk %}
+                <!-- Système d'onglets -->
+                <ul class="nav nav-tabs nav-fill" id="vehiculeTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="infos-tab" data-bs-toggle="tab" data-bs-target="#infos" type="button" role="tab" aria-controls="infos" aria-selected="true">
+                            <i class="bi bi-info-circle me-2"></i>Informations générales
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reparations-tab" data-bs-toggle="tab" data-bs-target="#reparations" type="button" role="tab" aria-controls="reparations" aria-selected="false">
+                            <i class="bi bi-tools me-2"></i>Historique réparations
+                            {% if form.instance.get_nombre_reparations > 0 %}
+                                <span class="badge bg-danger">{{ form.instance.get_nombre_reparations }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="vehiculeTabContent">
+                    <!-- Onglet Informations générales -->
+                    <div class="tab-pane fade show active" id="infos" role="tabpanel" aria-labelledby="infos-tab">
+                {% endif %}
+
                 <div class="card-body">
                     <form method="post" novalidate>
                         {% csrf_token %}
@@ -26,64 +51,247 @@
                             </div>
                         {% endif %}
 
-                        <div class="mb-3">
-                            <label for="{{ form.modele.id_for_label }}" class="form-label">
-                                {{ form.modele.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.modele }}
-                            {% if form.modele.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.modele.errors }}
-                                </div>
-                            {% endif %}
-                            {% if form.modele.help_text %}
-                                <div class="form-text">{{ form.modele.help_text }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.immatriculation.id_for_label }}" class="form-label">
-                                {{ form.immatriculation.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.immatriculation }}
-                            {% if form.immatriculation.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.immatriculation.errors }}
-                                </div>
-                            {% endif %}
-                            {% if form.immatriculation.help_text %}
-                                <div class="form-text">{{ form.immatriculation.help_text }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="form-check">
-                                {{ form.actif }}
-                                <label class="form-check-label" for="{{ form.actif.id_for_label }}">
-                                    {{ form.actif.label }}
-                                </label>
-                                {% if form.actif.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.actif.errors }}
+                        <!-- Section: Informations générales -->
+                        <div class="card mb-4 border-primary">
+                            <div class="card-header bg-primary bg-opacity-10">
+                                <h5 class="mb-0 text-primary">
+                                    <i class="bi bi-bus-front me-2"></i>Informations générales
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.modele.id_for_label }}" class="form-label fw-bold">
+                                            {{ form.modele.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.modele }}
+                                        {% if form.modele.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.modele.errors }}
+                                            </div>
+                                        {% endif %}
                                     </div>
-                                {% endif %}
-                                {% if form.actif.help_text %}
-                                    <div class="form-text">{{ form.actif.help_text }}</div>
-                                {% endif %}
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.immatriculation.id_for_label }}" class="form-label fw-bold">
+                                            {{ form.immatriculation.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.immatriculation }}
+                                        {% if form.immatriculation.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.immatriculation.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-12 mb-3">
+                                        <div class="form-check form-switch">
+                                            {{ form.actif }}
+                                            <label class="form-check-label fw-bold" for="{{ form.actif.id_for_label }}">
+                                                {{ form.actif.label }}
+                                            </label>
+                                            {% if form.actif.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.actif.errors }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Caractéristiques techniques -->
+                        <div class="card mb-4 border-warning">
+                            <div class="card-header bg-warning bg-opacity-10">
+                                <h5 class="mb-0 text-warning">
+                                    <i class="bi bi-gear-fill me-2"></i>Caractéristiques techniques
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.numero_chassis.id_for_label }}" class="form-label">
+                                            <i class="bi bi-upc-scan me-1"></i>{{ form.numero_chassis.label }}
+                                        </label>
+                                        {{ form.numero_chassis }}
+                                        {% if form.numero_chassis.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.numero_chassis.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.type_carburant.id_for_label }}" class="form-label">
+                                            <i class="bi bi-fuel-pump me-1"></i>{{ form.type_carburant.label }}
+                                        </label>
+                                        {{ form.type_carburant }}
+                                        {% if form.type_carburant.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.type_carburant.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.annee_fabrication.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar-event me-1"></i>{{ form.annee_fabrication.label }}
+                                        </label>
+                                        {{ form.annee_fabrication }}
+                                        {% if form.annee_fabrication.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.annee_fabrication.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.type_boite.id_for_label }}" class="form-label">
+                                            <i class="bi bi-gear-wide-connected me-1"></i>{{ form.type_boite.label }}
+                                        </label>
+                                        {{ form.type_boite }}
+                                        {% if form.type_boite.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.type_boite.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.date_mise_circulation.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar-check me-1"></i>{{ form.date_mise_circulation.label }}
+                                        </label>
+                                        {{ form.date_mise_circulation }}
+                                        {% if form.date_mise_circulation.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.date_mise_circulation.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Documents & conformité légale -->
+                        <div class="card mb-4 border-success">
+                            <div class="card-header bg-success bg-opacity-10">
+                                <h5 class="mb-0 text-success">
+                                    <i class="bi bi-file-earmark-text me-2"></i>Documents & conformité légale
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="{{ form.compagnie_assurance.id_for_label }}" class="form-label">
+                                            <i class="bi bi-shield-check me-1"></i>{{ form.compagnie_assurance.label }}
+                                        </label>
+                                        {{ form.compagnie_assurance }}
+                                        {% if form.compagnie_assurance.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.compagnie_assurance.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.date_expiration_assurance.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar-x me-1"></i>{{ form.date_expiration_assurance.label }}
+                                        </label>
+                                        {{ form.date_expiration_assurance }}
+                                        {% if form.date_expiration_assurance.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.date_expiration_assurance.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.date_expiration_visite_technique.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar-x me-1"></i>{{ form.date_expiration_visite_technique.label }}
+                                        </label>
+                                        {{ form.date_expiration_visite_technique }}
+                                        {% if form.date_expiration_visite_technique.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.date_expiration_visite_technique.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.date_expiration_carte_grise.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar-x me-1"></i>{{ form.date_expiration_carte_grise.label }}
+                                        </label>
+                                        {{ form.date_expiration_carte_grise }}
+                                        {% if form.date_expiration_carte_grise.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.date_expiration_carte_grise.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.date_expiration_licence_transport.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar-x me-1"></i>{{ form.date_expiration_licence_transport.label }}
+                                        </label>
+                                        {{ form.date_expiration_licence_transport }}
+                                        {% if form.date_expiration_licence_transport.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.date_expiration_licence_transport.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Notes & observations -->
+                        <div class="card mb-4 border-secondary">
+                            <div class="card-header bg-secondary bg-opacity-10">
+                                <h5 class="mb-0 text-secondary">
+                                    <i class="bi bi-pencil-square me-2"></i>Notes & observations
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                        {{ form.notes.label }}
+                                    </label>
+                                    {{ form.notes }}
+                                    {% if form.notes.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.notes.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'vehicules:vehicule_list' %}" class="btn btn-danger text-white fw-bold">
-                                <i class="bi bi-arrow-left"></i> Retour
+                                <i class="bi bi-arrow-left me-1"></i> Annuler
                             </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i>
+                            <button type="submit" class="btn btn-primary fw-bold">
+                                <i class="bi bi-check-circle me-1"></i>
                                 {% if form.instance.pk %}Modifier{% else %}Créer{% endif %}
                             </button>
                         </div>
                     </form>
                 </div>
+
+                {% if form.instance.pk %}
+                    </div>
+                    <!-- Fin Onglet Informations générales -->
+
+                    <!-- Onglet Historique réparations -->
+                    <div class="tab-pane fade" id="reparations" role="tabpanel" aria-labelledby="reparations-tab">
+                        <div class="card-body">
+                            {% include 'vehicules/partials/reparations_historique.html' with vehicule=form.instance %}
+                        </div>
+                    </div>
+                    <!-- Fin Onglet Historique réparations -->
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

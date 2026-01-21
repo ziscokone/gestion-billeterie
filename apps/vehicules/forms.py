@@ -1,5 +1,5 @@
 from django import forms
-from .models import ModeleVehicule, Vehicule
+from .models import ModeleVehicule, Vehicule, ReparationVehicule
 import json
 
 
@@ -75,8 +75,19 @@ class VehiculeForm(forms.ModelForm):
 
     class Meta:
         model = Vehicule
-        fields = ['modele', 'immatriculation', 'actif']
+        fields = [
+            # Informations générales
+            'modele', 'immatriculation', 'actif', 'notes',
+            # Caractéristiques techniques
+            'numero_chassis', 'annee_fabrication', 'date_mise_circulation',
+            'type_carburant', 'type_boite',
+            # Documents & conformité légale
+            'compagnie_assurance', 'date_expiration_assurance',
+            'date_expiration_visite_technique', 'date_expiration_carte_grise',
+            'date_expiration_licence_transport'
+        ]
         widgets = {
+            # Informations générales
             'modele': forms.Select(attrs={
                 'class': 'form-select',
             }),
@@ -87,9 +98,137 @@ class VehiculeForm(forms.ModelForm):
             'actif': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Notes et observations sur le véhicule...'
+            }),
+            # Caractéristiques techniques
+            'numero_chassis': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: WDD9066051P123456'
+            }),
+            'annee_fabrication': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: 2020',
+                'min': '1990',
+                'max': '2030'
+            }),
+            'date_mise_circulation': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'type_carburant': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'type_boite': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            # Documents & conformité légale
+            'compagnie_assurance': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: Allianz Assurances Guinée'
+            }),
+            'date_expiration_assurance': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'date_expiration_visite_technique': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'date_expiration_carte_grise': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'date_expiration_licence_transport': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
         }
         labels = {
+            # Informations générales
             'modele': 'Modèle de véhicule',
             'immatriculation': 'Numéro d\'immatriculation',
             'actif': 'Véhicule actif',
+            'notes': 'Notes et observations',
+            # Caractéristiques techniques
+            'numero_chassis': 'Numéro de châssis (VIN)',
+            'annee_fabrication': 'Année de fabrication',
+            'date_mise_circulation': 'Date de mise en circulation',
+            'type_carburant': 'Type de carburant',
+            'type_boite': 'Type de boîte de vitesse',
+            # Documents & conformité légale
+            'compagnie_assurance': 'Compagnie d\'assurance',
+            'date_expiration_assurance': 'Date d\'expiration assurance',
+            'date_expiration_visite_technique': 'Date d\'expiration visite technique',
+            'date_expiration_carte_grise': 'Date d\'expiration carte grise',
+            'date_expiration_licence_transport': 'Date d\'expiration licence de transport',
+        }
+
+
+class ReparationVehiculeForm(forms.ModelForm):
+    """Formulaire pour créer et modifier une réparation."""
+
+    class Meta:
+        model = ReparationVehicule
+        fields = [
+            'vehicule', 'date_reparation', 'type_reparation', 'description',
+            'garage_prestataire', 'montant', 'kilometrage', 'pieces_remplacees',
+            'facture', 'statut'
+        ]
+        widgets = {
+            'vehicule': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'date_reparation': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'type_reparation': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Décrire la réparation effectuée...'
+            }),
+            'garage_prestataire': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: Garage Central Auto'
+            }),
+            'montant': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: 250000',
+                'min': '0',
+                'step': '0.01'
+            }),
+            'kilometrage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: 145000',
+                'min': '0'
+            }),
+            'pieces_remplacees': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Ex: Embrayage, Disques de frein avant...'
+            }),
+            'facture': forms.FileInput(attrs={
+                'class': 'form-control',
+            }),
+            'statut': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+        }
+        labels = {
+            'vehicule': 'Véhicule',
+            'date_reparation': 'Date de réparation',
+            'type_reparation': 'Type de réparation',
+            'description': 'Description',
+            'garage_prestataire': 'Garage/Prestataire',
+            'montant': 'Montant (FCFA)',
+            'kilometrage': 'Kilométrage (optionnel)',
+            'pieces_remplacees': 'Pièces remplacées (optionnel)',
+            'facture': 'Facture/Reçu (optionnel)',
+            'statut': 'Statut',
         }
