@@ -121,7 +121,7 @@
                                 {% if voyage.vehicule %}
                                     {% with dispo=voyage.get_nb_places_disponibles %}
                                     <span class="badge {% if dispo > 10 %}badge-disponible{% elif dispo > 0 %}badge-reserve{% else %}badge-paye{% endif %}">
-                                        {{ dispo }}/{{ voyage.capacite }}
+                                        {{ dispo }}
                                     </span>
                                     {% endwith %}
                                 {% else %}
