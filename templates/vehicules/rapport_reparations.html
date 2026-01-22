@@ -80,45 +80,6 @@
                 </div>
             </div>
 
-            <!-- Véhicules à surveiller -->
-            {% if vehicules_critiques %}
-            <div class="card mb-4 border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Véhicules critiques (> 2,000,000 FCFA)</h5>
-                </div>
-                <div class="card-body">
-                    {% for vehicule_stat in vehicules_critiques %}
-                    <div class="alert alert-danger">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h6 class="mb-1">
-                                    <i class="bi bi-bus-front me-2"></i>
-                                    <strong>{{ vehicule_stat.vehicule.immatriculation }}</strong> - {{ vehicule_stat.vehicule.modele }}
-                                </h6>
-                                <p class="mb-1">
-                                    <strong>Coût total :</strong> {{ vehicule_stat.cout_total|floatformat:0|intcomma }} FCFA |
-                                    <strong>Réparations :</strong> {{ vehicule_stat.nb_reparations }} |
-                                    <strong>Coût moyen :</strong> {{ vehicule_stat.cout_moyen|floatformat:0|intcomma }} FCFA
-                                </p>
-                                <p class="mb-0 text-danger">
-                                    <strong>⚠️ Recommandation :</strong> Envisager la vente ou le remplacement de ce véhicule
-                                </p>
-                            </div>
-                            <div class="col-md-4 text-end">
-                                <a href="{% url 'vehicules:vehicule_update' vehicule_stat.vehicule.pk %}" class="btn btn-sm btn-outline-danger me-2">
-                                    <i class="bi bi-eye me-1"></i>Voir détails
-                                </a>
-                                <a href="{% url 'vehicules:vehicule_update' vehicule_stat.vehicule.pk %}" class="btn btn-sm btn-danger">
-                                    <i class="bi bi-x-circle me-1"></i>Désactiver
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
             <!-- Tableau comparatif par véhicule -->
             {% if vehicules_stats %}
             <div class="card mb-4">
@@ -135,7 +96,6 @@
                                     <th class="text-center">Nb réparations</th>
                                     <th class="text-end">Coût total</th>
                                     <th class="text-end">Coût moyen</th>
-                                    <th class="text-center">Statut</th>
                                     <th class="text-center">Action</th>
                                 </tr>
                             </thead>
@@ -152,15 +112,6 @@
                                     </td>
                                     <td class="text-end">{{ vehicule_stat.cout_moyen|floatformat:0|intcomma }} F</td>
                                     <td class="text-center">
-                                        {% if vehicule_stat.niveau_alerte == 'critique' %}
-                                            <span class="badge bg-danger fs-6">🔴 Critique</span>
-                                        {% elif vehicule_stat.niveau_alerte == 'surveillance' %}
-                                            <span class="badge bg-warning text-dark fs-6">🟡 Surveillance</span>
-                                        {% else %}
-                                            <span class="badge bg-success fs-6">🟢 Normal</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
                                         <a href="{% url 'vehicules:vehicule_update' vehicule_stat.vehicule.pk %}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> Détails
                                         </a>
@@ -169,14 +120,6 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                    </div>
-
-                    <div class="mt-3">
-                        <p class="mb-0">
-                            <span class="badge bg-danger me-2">🔴 Critique</span> > 2,000,000 FCFA
-                            <span class="badge bg-warning text-dark mx-2">🟡 Surveillance</span> 1,000,000 - 2,000,000 FCFA
-                            <span class="badge bg-success ms-2">🟢 Normal</span> < 1,000,000 FCFA
-                        </p>
                     </div>
                 </div>
             </div>
