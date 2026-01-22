@@ -23,15 +23,15 @@
                 <i class="bi bi-luggage me-2"></i>Recette Bagages
             </button>
             {% endif %}
-            <a href="{% url 'voyages:voyage_bordereau' voyage.pk %}" class="btn btn-primary" target="_blank">
-                <i class="bi bi-file-earmark-text me-2"></i>Voir le Bordereau
-            </a>
-            <a href="{% url 'voyages:voyage_liste_passagers' voyage.pk %}" class="btn btn-success" target="_blank">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bordereauModal">
+                <i class="bi bi-file-earmark-text me-2"></i>Bordereau
+            </button>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#listePassagersModal">
                 <i class="bi bi-list-ul me-2"></i>Liste Passagers
-            </a>
-            <a href="{% url 'voyages:voyage_recap_destination' voyage.pk %}" class="btn btn-info" target="_blank">
+            </button>
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#recapDestinationModal">
                 <i class="bi bi-geo-alt me-2"></i>Recap Destination
-            </a>
+            </button>
             <a href="{% url 'voyages:voyage_list' %}" class="btn btn-danger text-white fw-bold">
                 <i class="bi bi-arrow-left me-2"></i>Retour
             </a>
@@ -479,6 +479,75 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                 <button type="button" class="btn btn-success" id="confirmTerminerBtn">
                     <i class="bi bi-check-circle me-2"></i>Confirmer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Bordereau du Voyage -->
+<div class="modal fade" id="bordereauModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-text me-2"></i>Bordereau de Voyage
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="height: 70vh;">
+                <iframe id="bordereauIframe" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" id="printBordereauBtn">
+                    <i class="bi bi-printer me-2"></i>Imprimer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Liste des Passagers -->
+<div class="modal fade" id="listePassagersModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-list-ul me-2"></i>Liste des Passagers
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="height: 70vh;">
+                <iframe id="listePassagersIframe" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-success" id="printListePassagersBtn">
+                    <i class="bi bi-printer me-2"></i>Imprimer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Recap Destinations -->
+<div class="modal fade" id="recapDestinationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-geo-alt me-2"></i>Recap Destinations
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 d-flex justify-content-center" style="min-height: 350px; background: #f5f5f5;">
+                <iframe id="recapDestinationIframe" style="width: 320px; height: 320px; border: none;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-info" id="printRecapDestinationBtn">
+                    <i class="bi bi-printer me-2"></i>Imprimer
                 </button>
             </div>
         </div>
@@ -1071,6 +1140,71 @@ document.addEventListener('DOMContentLoaded', function() {
             messageDiv.textContent = message;
             messageDiv.classList.remove('d-none');
         }
+    }
+
+    // ==================== GESTION DES MODALS DOCUMENTS ====================
+
+    // URLs des documents
+    const bordereauUrl = "{% url 'voyages:voyage_bordereau' voyage.pk %}";
+    const listePassagersUrl = "{% url 'voyages:voyage_liste_passagers' voyage.pk %}";
+    const recapDestinationUrl = "{% url 'voyages:voyage_recap_destination' voyage.pk %}";
+
+    // Charger le contenu du Bordereau à l'ouverture du modal
+    document.getElementById('bordereauModal').addEventListener('show.bs.modal', function() {
+        const iframe = document.getElementById('bordereauIframe');
+        if (!iframe.src || iframe.src === 'about:blank') {
+            iframe.src = bordereauUrl;
+        }
+    });
+
+    // Charger le contenu de la Liste des Passagers à l'ouverture du modal
+    document.getElementById('listePassagersModal').addEventListener('show.bs.modal', function() {
+        const iframe = document.getElementById('listePassagersIframe');
+        if (!iframe.src || iframe.src === 'about:blank') {
+            iframe.src = listePassagersUrl;
+        }
+    });
+
+    // Charger le contenu du Recap Destinations à l'ouverture du modal
+    document.getElementById('recapDestinationModal').addEventListener('show.bs.modal', function() {
+        const iframe = document.getElementById('recapDestinationIframe');
+        if (!iframe.src || iframe.src === 'about:blank') {
+            iframe.src = recapDestinationUrl;
+        }
+    });
+
+    // Fonction pour imprimer le contenu d'une iframe
+    function printIframe(iframeId) {
+        const iframe = document.getElementById(iframeId);
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }
+    }
+
+    // Boutons d'impression
+    document.getElementById('printBordereauBtn').addEventListener('click', function() {
+        printIframe('bordereauIframe');
+    });
+
+    document.getElementById('printListePassagersBtn').addEventListener('click', function() {
+        printIframe('listePassagersIframe');
+    });
+
+    document.getElementById('printRecapDestinationBtn').addEventListener('click', function() {
+        printIframe('recapDestinationIframe');
+    });
+
+    // Recharger les iframes quand les données changent (après modification des dépenses, bagages, etc.)
+    function reloadDocumentIframes() {
+        const bordereauIframe = document.getElementById('bordereauIframe');
+        const listePassagersIframe = document.getElementById('listePassagersIframe');
+        const recapDestinationIframe = document.getElementById('recapDestinationIframe');
+
+        // Réinitialiser les src pour forcer le rechargement lors de la prochaine ouverture
+        if (bordereauIframe) bordereauIframe.src = 'about:blank';
+        if (listePassagersIframe) listePassagersIframe.src = 'about:blank';
+        if (recapDestinationIframe) recapDestinationIframe.src = 'about:blank';
     }
 });
 </script>
