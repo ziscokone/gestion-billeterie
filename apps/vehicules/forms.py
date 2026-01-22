@@ -175,7 +175,7 @@ class ReparationVehiculeForm(forms.ModelForm):
         fields = [
             'vehicule', 'date_reparation', 'type_reparation', 'description',
             'garage_prestataire', 'montant', 'kilometrage', 'pieces_remplacees',
-            'facture', 'statut'
+            'statut'
         ]
         widgets = {
             'vehicule': forms.Select(attrs={
@@ -213,9 +213,6 @@ class ReparationVehiculeForm(forms.ModelForm):
                 'rows': 2,
                 'placeholder': 'Ex: Embrayage, Disques de frein avant...'
             }),
-            'facture': forms.FileInput(attrs={
-                'class': 'form-control',
-            }),
             'statut': forms.Select(attrs={
                 'class': 'form-select',
             }),
@@ -229,6 +226,5 @@ class ReparationVehiculeForm(forms.ModelForm):
             'montant': 'Montant (FCFA)',
             'kilometrage': 'Kilométrage (optionnel)',
             'pieces_remplacees': 'Pièces remplacées (optionnel)',
-            'facture': 'Facture/Reçu (optionnel)',
             'statut': 'Statut',
         }

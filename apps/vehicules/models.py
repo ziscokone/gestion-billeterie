@@ -331,12 +331,6 @@ class ReparationVehicule(models.Model):
         blank=True,
         verbose_name="Pièces remplacées"
     )
-    facture = models.FileField(
-        upload_to='reparations/factures/%Y/%m/',
-        blank=True,
-        null=True,
-        verbose_name="Facture/Reçu"
-    )
     statut = models.CharField(
         max_length=20,
         choices=STATUT_CHOICES,

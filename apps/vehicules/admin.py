@@ -61,7 +61,7 @@ class ReparationVehiculeAdmin(admin.ModelAdmin):
             'fields': ('description', 'garage_prestataire', 'montant', 'kilometrage')
         }),
         ('Pièces et documents', {
-            'fields': ('pieces_remplacees', 'facture'),
+            'fields': ('pieces_remplacees',),
             'classes': ('collapse',)
         }),
     )
