@@ -4,7 +4,7 @@
 <div class="card mb-4 border-info">
     <div class="card-header bg-info bg-opacity-10">
         <h5 class="mb-0 text-info">
-            <i class="bi bi-bar-chart-fill me-2"></i>Statistiques & alertes
+            <i class="bi bi-bar-chart-fill me-2"></i>Statistiques
         </h5>
     </div>
     <div class="card-body">
@@ -43,21 +43,6 @@
                 </div>
             </div>
         </div>
-
-        {% if vehicule.is_critique %}
-        <div class="alert alert-danger mt-3" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <strong>ALERTE :</strong> Ce véhicule a dépassé le seuil critique de 2,000,000 FCFA en réparations.
-            <div class="mt-2">
-                <strong>Recommandation :</strong> Envisager la vente ou le remplacement de ce véhicule.
-            </div>
-            <div class="mt-2">
-                <a href="{% url 'vehicules:vehicule_update' vehicule.pk %}" class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-x-circle me-1"></i>Désactiver ce véhicule
-                </a>
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 

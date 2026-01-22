@@ -28,6 +28,13 @@ class Gare(models.Model):
         default=0,
         verbose_name="Dernier numéro de ticket"
     )
+    mois_dernier_ticket = models.CharField(
+        max_length=6,
+        blank=True,
+        default='',
+        verbose_name="Mois du dernier ticket",
+        help_text="Format YYYYMM pour la réinitialisation mensuelle"
+    )
 
     class Meta:
         verbose_name = "Gare"
@@ -50,14 +57,19 @@ class Gare(models.Model):
         Génère un nouveau numéro de ticket unique pour cette gare.
         Format: {CODE}-{ANNEE}{MOIS}-{SEQUENCE:05d}
         Ex: CKY-202601-00001
+
+        La séquence se réinitialise automatiquement chaque mois.
         """
         from django.utils import timezone
         now = timezone.now()
-
-        # Réinitialiser le compteur si on change de mois
         mois_actuel = now.strftime('%Y%m')
 
+        # Réinitialiser le compteur si on change de mois
+        if self.mois_dernier_ticket != mois_actuel:
+            self.dernier_numero_ticket = 0
+            self.mois_dernier_ticket = mois_actuel
+
         self.dernier_numero_ticket += 1
-        self.save(update_fields=['dernier_numero_ticket'])
+        self.save(update_fields=['dernier_numero_ticket', 'mois_dernier_ticket'])
 
         return f"{self.code}-{mois_actuel}-{self.dernier_numero_ticket:05d}"
