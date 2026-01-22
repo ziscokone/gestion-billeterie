@@ -6,13 +6,13 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header text-white">
             <div class="d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">
                     <i class="bi bi-tools me-2"></i>Gestion des Réparations
                 </h4>
                 <div>
-                    <a href="{% url 'vehicules:rapport_reparations' %}" class="btn btn-light btn-sm me-2">
+                    <a href="{% url 'vehicules:rapport_reparations' %}" class="btn btn-sm me-2" style="background-color: #E67E22; color: white;">
                         <i class="bi bi-bar-chart-fill me-1"></i>Voir le rapport
                     </a>
                     <a href="{% url 'vehicules:reparation_create' %}" class="btn btn-success btn-sm">
@@ -25,7 +25,7 @@
         <div class="card-body">
             <!-- Filtres -->
             <div class="card mb-4 border-primary">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header text-white">
                     <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtres</h6>
                 </div>
                 <div class="card-body">
@@ -45,8 +45,8 @@
                             <label class="form-label">Type</label>
                             <select name="type" class="form-select">
                                 <option value="">Tous types</option>
-                                {% for code, label in types_reparation %}
-                                    <option value="{{ code }}" {% if type_filtre == code %}selected{% endif %}>{{ label }}</option>
+                                {% for type in types_reparation %}
+                                    <option value="{{ type.pk }}" {% if type_filtre == type.pk|stringformat:"s" %}selected{% endif %}>{{ type.nom }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -105,7 +105,7 @@
                                 <small class="text-muted">{{ reparation.vehicule.modele.nom }}</small>
                             </td>
                             <td>
-                                <span class="badge bg-secondary">{{ reparation.get_type_reparation_display }}</span>
+                                <span class="badge bg-secondary">{{ reparation.type_reparation.nom }}</span>
                             </td>
                             <td><strong class="text-primary">{{ reparation.montant|floatformat:0|intcomma }} F</strong></td>
                             <td>{{ reparation.garage_prestataire }}</td>

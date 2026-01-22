@@ -24,7 +24,7 @@
                     <div class="border-start border-4 border-danger ps-3 mb-3">
                         <p class="mb-1"><strong>Véhicule :</strong> {{ object.vehicule.immatriculation }}</p>
                         <p class="mb-1"><strong>Date :</strong> {{ object.date_reparation|date:"d/m/Y" }}</p>
-                        <p class="mb-1"><strong>Type :</strong> {{ object.get_type_reparation_display }}</p>
+                        <p class="mb-1"><strong>Type :</strong> {{ object.type_reparation.nom }}</p>
                         <p class="mb-0"><strong>Montant :</strong> {{ object.montant }} FCFA</p>
                     </div>
 

@@ -25,4 +25,10 @@ urlpatterns = [
 
     # Rapport analytique
     path('rapport/', views.RapportReparationsView.as_view(), name='rapport_reparations'),
+
+    # Types de réparation
+    path('types-reparation/', views.TypeReparationListView.as_view(), name='type_reparation_list'),
+    path('types-reparation/ajouter/', views.TypeReparationCreateView.as_view(), name='type_reparation_create'),
+    path('types-reparation/<int:pk>/modifier/', views.TypeReparationUpdateView.as_view(), name='type_reparation_update'),
+    path('types-reparation/<int:pk>/supprimer/', views.TypeReparationDeleteView.as_view(), name='type_reparation_delete'),
 ]

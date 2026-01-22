@@ -282,17 +282,36 @@ class Vehicule(models.Model):
         return self.get_cout_total_reparations() > seuil
 
 
+class TypeReparation(models.Model):
+    """Modèle représentant un type de réparation."""
+
+    nom = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Nom"
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="Description"
+    )
+    actif = models.BooleanField(
+        default=True,
+        verbose_name="Actif"
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Type de réparation"
+        verbose_name_plural = "Types de réparation"
+        ordering = ['nom']
+
+    def __str__(self):
+        return self.nom
+
+
 class ReparationVehicule(models.Model):
     """Modèle représentant une réparation effectuée sur un véhicule."""
-
-    TYPE_REPARATION_CHOICES = [
-        ('mecanique', 'Mécanique'),
-        ('carrosserie', 'Carrosserie'),
-        ('electrique', 'Électrique'),
-        ('pneumatiques', 'Pneumatiques'),
-        ('revision', 'Révision'),
-        ('autre', 'Autre'),
-    ]
 
     STATUT_CHOICES = [
         ('en_attente', 'En attente'),
@@ -307,9 +326,10 @@ class ReparationVehicule(models.Model):
         verbose_name="Véhicule"
     )
     date_reparation = models.DateField(verbose_name="Date de réparation")
-    type_reparation = models.CharField(
-        max_length=20,
-        choices=TYPE_REPARATION_CHOICES,
+    type_reparation = models.ForeignKey(
+        TypeReparation,
+        on_delete=models.PROTECT,
+        related_name='reparations',
         verbose_name="Type de réparation"
     )
     description = models.TextField(verbose_name="Description")
@@ -346,4 +366,4 @@ class ReparationVehicule(models.Model):
         ordering = ['-date_reparation']
 
     def __str__(self):
-        return f"{self.vehicule.immatriculation} - {self.get_type_reparation_display()} - {self.date_reparation}"
+        return f"{self.vehicule.immatriculation} - {self.type_reparation.nom} - {self.date_reparation}"

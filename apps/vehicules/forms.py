@@ -1,5 +1,5 @@
 from django import forms
-from .models import ModeleVehicule, Vehicule, ReparationVehicule
+from .models import ModeleVehicule, Vehicule, ReparationVehicule, TypeReparation
 import json
 
 
@@ -227,4 +227,36 @@ class ReparationVehiculeForm(forms.ModelForm):
             'kilometrage': 'Kilométrage (optionnel)',
             'pieces_remplacees': 'Pièces remplacées (optionnel)',
             'statut': 'Statut',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrer uniquement les types actifs
+        self.fields['type_reparation'].queryset = TypeReparation.objects.filter(actif=True)
+
+
+class TypeReparationForm(forms.ModelForm):
+    """Formulaire pour créer et modifier un type de réparation."""
+
+    class Meta:
+        model = TypeReparation
+        fields = ['nom', 'description', 'actif']
+        widgets = {
+            'nom': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: Mécanique'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Description du type de réparation...'
+            }),
+            'actif': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'nom': 'Nom',
+            'description': 'Description',
+            'actif': 'Actif',
         }

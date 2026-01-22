@@ -5,8 +5,8 @@ from django.db.models import Q, Sum, Count
 from django.shortcuts import get_object_or_404, redirect
 from datetime import datetime, timedelta
 from core.mixins import AdminRequiredMixin
-from .models import ModeleVehicule, Vehicule, ReparationVehicule
-from .forms import ModeleVehiculeForm, VehiculeForm, ReparationVehiculeForm
+from .models import ModeleVehicule, Vehicule, ReparationVehicule, TypeReparation
+from .forms import ModeleVehiculeForm, VehiculeForm, ReparationVehiculeForm, TypeReparationForm
 from apps.compagnie.models import Compagnie
 
 
@@ -152,7 +152,7 @@ class ReparationVehiculeListView(AdminRequiredMixin, ListView):
         # Filtre par type
         type_reparation = self.request.GET.get('type')
         if type_reparation:
-            queryset = queryset.filter(type_reparation=type_reparation)
+            queryset = queryset.filter(type_reparation_id=type_reparation)
 
         # Filtre par statut
         statut = self.request.GET.get('statut')
@@ -167,12 +167,12 @@ class ReparationVehiculeListView(AdminRequiredMixin, ListView):
         if date_fin:
             queryset = queryset.filter(date_reparation__lte=date_fin)
 
-        return queryset.select_related('vehicule', 'vehicule__modele').order_by('-date_reparation')
+        return queryset.select_related('vehicule', 'vehicule__modele', 'type_reparation').order_by('-date_reparation')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['vehicules'] = Vehicule.objects.all().order_by('immatriculation')
-        context['types_reparation'] = ReparationVehicule.TYPE_REPARATION_CHOICES
+        context['types_reparation'] = TypeReparation.objects.filter(actif=True)
         context['statuts'] = ReparationVehicule.STATUT_CHOICES
 
         # Calcul du total pour la période filtrée
@@ -311,12 +311,12 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
         # Répartition par type de réparation
         types_stats = []
         cout_total_types = context['cout_total']
-        for type_code, type_label in ReparationVehicule.TYPE_REPARATION_CHOICES:
-            cout = reparations.filter(type_reparation=type_code).aggregate(total=Sum('montant'))['total'] or 0
+        for type_rep in TypeReparation.objects.filter(actif=True):
+            cout = reparations.filter(type_reparation=type_rep).aggregate(total=Sum('montant'))['total'] or 0
             if cout > 0:
                 pourcentage = (cout / cout_total_types * 100) if cout_total_types > 0 else 0
                 types_stats.append({
-                    'label': type_label,
+                    'label': type_rep.nom,
                     'cout': cout,
                     'pourcentage': pourcentage
                 })
@@ -327,3 +327,61 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
         context['vehicules_critiques'] = [v for v in vehicules_stats if v['niveau_alerte'] == 'critique']
 
         return context
+
+
+# Vues pour les types de réparation
+class TypeReparationListView(AdminRequiredMixin, ListView):
+    """Liste des types de réparation."""
+    model = TypeReparation
+    template_name = 'vehicules/type_reparation_list.html'
+    context_object_name = 'types_reparation'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search = self.request.GET.get('q')
+        if search:
+            queryset = queryset.filter(
+                Q(nom__icontains=search) |
+                Q(description__icontains=search)
+            )
+        return queryset.order_by('nom')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('q', '')
+        return context
+
+
+class TypeReparationCreateView(AdminRequiredMixin, CreateView):
+    """Créer un nouveau type de réparation."""
+    model = TypeReparation
+    form_class = TypeReparationForm
+    template_name = 'vehicules/type_reparation_form.html'
+    success_url = reverse_lazy('vehicules:type_reparation_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Type de réparation créé avec succès.')
+        return super().form_valid(form)
+
+
+class TypeReparationUpdateView(AdminRequiredMixin, UpdateView):
+    """Modifier un type de réparation."""
+    model = TypeReparation
+    form_class = TypeReparationForm
+    template_name = 'vehicules/type_reparation_form.html'
+    success_url = reverse_lazy('vehicules:type_reparation_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Type de réparation modifié avec succès.')
+        return super().form_valid(form)
+
+
+class TypeReparationDeleteView(AdminRequiredMixin, DeleteView):
+    """Supprimer un type de réparation."""
+    model = TypeReparation
+    template_name = 'vehicules/type_reparation_confirm_delete.html'
+    success_url = reverse_lazy('vehicules:type_reparation_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Type de réparation supprimé avec succès.')
+        return super().form_valid(form)

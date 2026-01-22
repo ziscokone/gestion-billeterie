@@ -79,7 +79,7 @@
             <div>
                 <h6 class="mb-1">
                     <i class="bi bi-calendar3 me-1"></i>{{ reparation.date_reparation|date:"d/m/Y" }}
-                    <span class="badge bg-secondary ms-2">{{ reparation.get_type_reparation_display }}</span>
+                    <span class="badge bg-secondary ms-2">{{ reparation.type_reparation.nom }}</span>
                     {% if reparation.statut == 'terminee' %}
                         <span class="badge bg-success ms-1"><i class="bi bi-check-circle"></i> Terminée</span>
                     {% elif reparation.statut == 'en_cours' %}
