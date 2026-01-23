@@ -141,8 +141,14 @@ class Depense(models.Model):
 
     def peut_creer_reparation(self):
         """Vérifie si on peut créer une réparation depuis cette dépense."""
+        # Vérifier par code OU par nom (pour compatibilité avec types créés manuellement)
+        is_reparation_type = (
+            self.type_depense.code == 'reparation' or
+            'réparation' in self.type_depense.nom.lower() or
+            'reparation' in self.type_depense.nom.lower()
+        )
         return (
-            self.type_depense.code == 'reparation' and
+            is_reparation_type and
             not self.a_reparation_liee() and
             self.voyage.vehicule is not None
         )

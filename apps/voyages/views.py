@@ -1094,8 +1094,13 @@ def creer_reparation_depuis_depense(request, depense_id):
             if voyage.gare != user.gare:
                 return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
 
-        # Vérifier que c'est une dépense de type "Réparation"
-        if depense.type_depense.code != 'reparation':
+        # Vérifier que c'est une dépense de type "Réparation" (par code OU par nom)
+        is_reparation_type = (
+            depense.type_depense.code == 'reparation' or
+            'réparation' in depense.type_depense.nom.lower() or
+            'reparation' in depense.type_depense.nom.lower()
+        )
+        if not is_reparation_type:
             return JsonResponse({
                 'success': False,
                 'error': 'Cette dépense n\'est pas de type "Réparation"'
