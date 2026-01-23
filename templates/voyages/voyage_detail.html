@@ -1062,7 +1062,12 @@ document.addEventListener('DOMContentLoaded', function() {
         depensesExistantes.forEach(depense => {
             // Déterminer l'action à afficher
             let actionHtml = '-';
-            if (depense.type_depense_code === 'reparation') {
+            // Vérifier si c'est une réparation (par code ou par nom)
+            const isReparation = depense.type_depense_code === 'reparation' ||
+                                 depense.type_depense_nom.toLowerCase().includes('réparation') ||
+                                 depense.type_depense_nom.toLowerCase().includes('reparation');
+
+            if (isReparation) {
                 if (depense.reparation_id) {
                     // Réparation déjà créée
                     actionHtml = `
