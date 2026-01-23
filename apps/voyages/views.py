@@ -895,12 +895,54 @@ def get_disposition_voyage(request, voyage_id):
                 'error': 'Ce voyage n\'a pas de véhicule assigné'
             }, status=400)
 
-        # Récupérer la disposition
-        disposition = voyage.vehicule.modele.get_disposition_pour_affichage(voyage)
+        # Récupérer la disposition brute du modèle de véhicule
+        disposition_base = voyage.vehicule.modele.get_disposition_pour_affichage()
+
+        # Récupérer les sièges occupés (excluant les reportés)
+        sieges_occupes = list(
+            voyage.billets.exclude(statut='reporte').values_list('numero_siege', flat=True)
+        )
+
+        # Enrichir la disposition avec le statut des sièges
+        disposition_enrichie = {
+            'colonnes': disposition_base.get('colonnes', 5),
+            'rangees': []
+        }
+
+        for rangee in disposition_base.get('rangees', []):
+            sieges_rangee = []
+            for siege in rangee.get('sieges', []):
+                if siege.get('type') == 'couloir' or siege.get('numero') is None:
+                    # Couloir (None)
+                    sieges_rangee.append(None)
+                elif siege.get('type') == 'non_vendable':
+                    # Siège non vendable
+                    sieges_rangee.append({
+                        'numero': siege['numero'],
+                        'statut': 'non_vendable'
+                    })
+                else:
+                    # Siège vendable - vérifier s'il est occupé
+                    numero_siege = siege['numero']
+                    if numero_siege in sieges_occupes:
+                        sieges_rangee.append({
+                            'numero': numero_siege,
+                            'statut': 'occupe'
+                        })
+                    else:
+                        sieges_rangee.append({
+                            'numero': numero_siege,
+                            'statut': 'disponible'
+                        })
+
+            disposition_enrichie['rangees'].append({
+                'rang': rangee.get('rang'),
+                'sieges': sieges_rangee
+            })
 
         return JsonResponse({
             'success': True,
-            'disposition': disposition,
+            'disposition': disposition_enrichie,
             'capacite': voyage.capacite,
             'places_libres': len(voyage.get_sieges_disponibles())
         })
