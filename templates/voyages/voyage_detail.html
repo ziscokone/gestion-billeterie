@@ -272,7 +272,7 @@
         <div class="modal-content">
             <div class="modal-header bg-warning">
                 <h5 class="modal-title">
-                    <i class="bi bi-people-fill me-2"></i>Sélection des Agents du Voyage
+                    <i class="bi bi-people-fill me-2"></i>Sélection des Agents et du Véhicule
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -304,9 +304,24 @@
                         <div class="form-text">Convoyeur assigné à ce voyage</div>
                     </div>
 
+                    <!-- Sélection du Véhicule -->
+                    <div class="mb-3">
+                        <label for="vehicule_id" class="form-label fw-bold">
+                            <i class="bi bi-truck me-1"></i>Véhicule
+                        </label>
+                        <select class="form-select" id="vehicule_id" name="vehicule_id">
+                            <option value="">-- Sélectionner un véhicule --</option>
+                            <!-- Options chargées dynamiquement via AJAX -->
+                        </select>
+                        <div class="form-text">
+                            Véhicule qui effectuera ce voyage.
+                            <span id="capacite_info" class="text-muted"></span>
+                        </div>
+                    </div>
+
                     <!-- Affichage des agents actuels -->
                     <div class="alert alert-info">
-                        <h6 class="alert-heading">Agents actuellement assignés :</h6>
+                        <h6 class="alert-heading">Affectations actuelles :</h6>
                         <p class="mb-1">
                             <strong>Chauffeur :</strong>
                             <span id="current_chauffeur">
@@ -317,11 +332,21 @@
                                 {% endif %}
                             </span>
                         </p>
-                        <p class="mb-0">
+                        <p class="mb-1">
                             <strong>Convoyeur :</strong>
                             <span id="current_convoyeur">
                                 {% if voyage.convoyeur %}
                                     {{ voyage.convoyeur.nom_complet }}
+                                {% else %}
+                                    <em class="text-muted">Non assigné</em>
+                                {% endif %}
+                            </span>
+                        </p>
+                        <p class="mb-0">
+                            <strong>Véhicule :</strong>
+                            <span id="current_vehicule">
+                                {% if voyage.vehicule %}
+                                    {{ voyage.vehicule.immatriculation }} ({{ voyage.vehicule.modele.nom }} - {{ voyage.vehicule.capacite }} places)
                                 {% else %}
                                     <em class="text-muted">Non assigné</em>
                                 {% endif %}
@@ -601,6 +626,31 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         convoyeurSelect.appendChild(option);
                     });
+
+                    // Remplir la liste des véhicules
+                    const vehiculeSelect = document.getElementById('vehicule_id');
+                    vehiculeSelect.innerHTML = '<option value="">-- Sélectionner un véhicule --</option>';
+
+                    if (data.vehicules && data.vehicules.length > 0) {
+                        data.vehicules.forEach(vehicule => {
+                            const option = document.createElement('option');
+                            option.value = vehicule.id;
+                            option.textContent = `${vehicule.immatriculation} - ${vehicule.modele_nom} (${vehicule.capacite} places)`;
+                            if (data.voyage.vehicule_id === vehicule.id) {
+                                option.selected = true;
+                            }
+                            vehiculeSelect.appendChild(option);
+                        });
+
+                        // Afficher l'info de capacité minimale si pertinent
+                        if (data.capacite_minimale > 0) {
+                            document.getElementById('capacite_info').textContent =
+                                `(Capacité minimale requise : ${data.capacite_minimale} places)`;
+                        }
+                    } else {
+                        vehiculeSelect.innerHTML = '<option value="">Aucun véhicule disponible</option>';
+                        vehiculeSelect.disabled = true;
+                    }
                 } else {
                     showAgentsMessage('Erreur lors du chargement des agents', 'danger');
                 }
@@ -616,6 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const saveBtn = this;
         const chauffeurId = document.getElementById('chauffeur_id').value;
         const convoyeurId = document.getElementById('convoyeur_id').value;
+        const vehiculeId = document.getElementById('vehicule_id').value;
 
         // Désactiver le bouton pendant l'enregistrement
         saveBtn.disabled = true;
@@ -633,7 +684,8 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({
                 chauffeur_id: chauffeurId || null,
-                convoyeur_id: convoyeurId || null
+                convoyeur_id: convoyeurId || null,
+                vehicule_id: vehiculeId || null
             })
         })
         .then(response => response.json())
@@ -646,6 +698,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     data.chauffeur_nom || '<em class="text-muted">Non assigné</em>';
                 document.getElementById('current_convoyeur').innerHTML =
                     data.convoyeur_nom || '<em class="text-muted">Non assigné</em>';
+                document.getElementById('current_vehicule').innerHTML =
+                    data.vehicule_immatriculation
+                        ? `${data.vehicule_immatriculation} <span class="text-success">(mis à jour)</span>`
+                        : '<em class="text-muted">Non assigné</em>';
 
                 // Recharger la page après 1 seconde pour mettre à jour les informations
                 setTimeout(() => {

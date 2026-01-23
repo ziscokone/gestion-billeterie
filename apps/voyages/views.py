@@ -1,7 +1,7 @@
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Max
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
@@ -17,6 +17,7 @@ from .forms import VoyageForm
 from apps.compagnie.models import Compagnie
 from apps.personnel.models import Chauffeur, Convoyeur
 from apps.comptabilite.models import TypeDepense, Depense
+from apps.vehicules.models import Vehicule
 
 
 class VoyageListView(GestionRequiredMixin, ListView):
@@ -364,16 +365,39 @@ def get_voyage_agents(request, pk):
             for c in convoyeurs
         ]
 
+        # Calculer le plus haut numéro de siège vendu pour filtrer les véhicules
+        max_siege = voyage.billets.aggregate(max_siege=Max('numero_siege'))['max_siege']
+        capacite_minimale = max_siege if max_siege else 0
+
+        # Récupérer tous les véhicules actifs avec capacité suffisante
+        vehicules = Vehicule.objects.filter(
+            actif=True,
+            modele__capacite__gte=capacite_minimale
+        ).select_related('modele', 'compagnie').order_by('immatriculation')
+
+        vehicules_data = [
+            {
+                'id': v.id,
+                'immatriculation': v.immatriculation,
+                'modele_nom': v.modele.nom,
+                'capacite': v.capacite
+            }
+            for v in vehicules
+        ]
+
         # Informations du voyage
         voyage_data = {
             'chauffeur_id': voyage.chauffeur.id if voyage.chauffeur else None,
             'convoyeur_id': voyage.convoyeur.id if voyage.convoyeur else None,
+            'vehicule_id': voyage.vehicule.id if voyage.vehicule else None,
         }
 
         return JsonResponse({
             'success': True,
             'chauffeurs': chauffeurs_data,
             'convoyeurs': convoyeurs_data,
+            'vehicules': vehicules_data,
+            'capacite_minimale': capacite_minimale,
             'voyage': voyage_data
         })
 
@@ -404,6 +428,7 @@ def save_voyage_agents(request, pk):
         data = json.loads(request.body)
         chauffeur_id = data.get('chauffeur_id')
         convoyeur_id = data.get('convoyeur_id')
+        vehicule_id = data.get('vehicule_id')
 
         # Assigner le chauffeur
         if chauffeur_id:
@@ -419,14 +444,33 @@ def save_voyage_agents(request, pk):
         else:
             voyage.convoyeur = None
 
+        # Assigner le véhicule
+        if vehicule_id:
+            # Vérifier que le véhicule existe et est actif
+            vehicule = get_object_or_404(Vehicule, pk=vehicule_id, actif=True)
+
+            # Vérification supplémentaire : capacité suffisante
+            max_siege = voyage.billets.aggregate(max_siege=Max('numero_siege'))['max_siege']
+            if max_siege and vehicule.capacite < max_siege:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Le véhicule sélectionné a une capacité de {vehicule.capacite} places, '
+                             f'mais le siège {max_siege} a déjà été vendu.'
+                }, status=400)
+
+            voyage.vehicule = vehicule
+        else:
+            voyage.vehicule = None
+
         # Sauvegarder en base de données
-        voyage.save(update_fields=['chauffeur', 'convoyeur', 'date_modification'])
+        voyage.save(update_fields=['chauffeur', 'convoyeur', 'vehicule', 'date_modification'])
 
         return JsonResponse({
             'success': True,
-            'message': 'Agents enregistrés avec succès',
+            'message': 'Agents et véhicule enregistrés avec succès',
             'chauffeur_nom': voyage.chauffeur.nom_complet if voyage.chauffeur else None,
             'convoyeur_nom': voyage.convoyeur.nom_complet if voyage.convoyeur else None,
+            'vehicule_immatriculation': voyage.vehicule.immatriculation if voyage.vehicule else None,
         })
 
     except json.JSONDecodeError:
