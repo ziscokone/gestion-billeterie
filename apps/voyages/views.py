@@ -1016,7 +1016,10 @@ def reporter_billet(request, billet_id):
                 'error': f'Le siège {nouveau_siege} n\'est pas disponible sur le nouveau voyage'
             }, status=400)
 
-        # 1. Créer le NOUVEAU billet (montant = 0 car déjà payé)
+        # 1. Sauvegarder le montant de l'ancien billet avant modification
+        montant_a_transferer = ancien_billet.montant
+
+        # 2. Créer le NOUVEAU billet (le montant est transféré de l'ancien billet)
         numero_nouveau_billet = voyage_actuel.gare.generer_numero_ticket()
         nouveau_billet = Billet.objects.create(
             numero=numero_nouveau_billet,
@@ -1025,20 +1028,21 @@ def reporter_billet(request, billet_id):
             client_nom=ancien_billet.client_nom,
             client_telephone=ancien_billet.client_telephone,
             numero_siege=nouveau_siege,
-            montant=0,  # Déjà payé dans l'ancien billet
+            montant=montant_a_transferer,  # Le montant suit le client
             statut='paye',
             moyen_paiement=ancien_billet.moyen_paiement,
             guichetier=user,
             date_paiement=timezone.now()
         )
 
-        # 2. Modifier l'ANCIEN billet (statut = reporté)
+        # 3. Modifier l'ANCIEN billet (statut = reporté, montant = 0 pour libérer la place)
         ancien_billet.statut = 'reporte'
+        ancien_billet.montant = 0  # Place libérée, peut être revendue
         ancien_billet.reporte_vers_billet = nouveau_billet
         ancien_billet.date_report = timezone.now()
         ancien_billet.guichetier_report = user
         ancien_billet.motif_report = motif
-        ancien_billet.save(update_fields=['statut', 'reporte_vers_billet', 'date_report', 'guichetier_report', 'motif_report', 'date_modification'])
+        ancien_billet.save(update_fields=['statut', 'montant', 'reporte_vers_billet', 'date_report', 'guichetier_report', 'motif_report', 'date_modification'])
 
         # 3. Créer l'historique de report
         HistoriqueReport.objects.create(
