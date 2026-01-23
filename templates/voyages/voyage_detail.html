@@ -405,11 +405,13 @@
                         <form id="depensesForm">
                             {% csrf_token %}
                             <div id="depensesInputs">
-                                <!-- Les champs de saisie seront générés dynamiquement ici -->
+                                <!-- Les lignes de saisie seront ajoutées dynamiquement ici -->
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addDepenseLine">
-                                <i class="bi bi-plus-circle me-1"></i>Ajouter une autre ligne
-                            </button>
+                            <div id="addLineButtonContainer">
+                                <button type="button" class="btn btn-sm btn-primary" id="addDepenseLine">
+                                    <i class="bi bi-plus-circle me-1"></i>Ajouter une ligne
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -964,61 +966,73 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Fonction pour générer les champs de saisie pour chaque type de dépense
+    // Fonction pour générer les champs de saisie (au départ vide)
     function generateDepensesInputs() {
         const container = document.getElementById('depensesInputs');
         container.innerHTML = '';
         ligneCounter = 0;
-
-        typesDepenses.forEach(type => {
-            addDepenseInput(type);
-        });
+        // Ne rien ajouter au départ - l'utilisateur doit cliquer sur "Ajouter une ligne"
     }
 
-    // Fonction pour ajouter un champ de saisie pour un type de dépense
-    function addDepenseInput(type) {
-        const container = document.getElementById('depensesInputs');
-        ligneCounter++;
-
-        const div = document.createElement('div');
-        div.className = 'row mb-3 depense-input-row';
-        div.dataset.ligneId = ligneCounter;
-        div.dataset.typeId = type.id;
-
-        div.innerHTML = `
-            <div class="col-md-4">
-                <label class="form-label fw-bold">${type.nom}</label>
-                <input type="hidden" class="depense-type-id" value="${type.id}">
-            </div>
-            <div class="col-md-4">
-                <input type="number"
-                       class="form-control depense-montant"
-                       placeholder="Montant (FCFA)"
-                       min="0"
-                       step="1">
-            </div>
-            <div class="col-md-4">
-                <input type="text"
-                       class="form-control depense-description"
-                       placeholder="${type.description_obligatoire ? 'Description (obligatoire)' : 'Description (optionnel)'}"
-                       ${type.description_obligatoire ? 'required' : ''}>
-                ${type.description_obligatoire ? '<div class="form-text text-danger">* Obligatoire si montant renseigné</div>' : ''}
-            </div>
-        `;
-
-        container.appendChild(div);
-    }
-
-    // Bouton "Ajouter une autre ligne"
-    document.getElementById('addDepenseLine').addEventListener('click', function() {
+    // Fonction pour ajouter une nouvelle ligne de saisie
+    function addDepenseInput() {
         if (typesDepenses.length === 0) {
             showDepensesMessage('Aucun type de dépense disponible', 'warning');
             return;
         }
 
-        // Afficher un sélecteur pour choisir le type
-        const type = typesDepenses[0]; // Par défaut, le premier type
-        addDepenseInput(type);
+        const container = document.getElementById('depensesInputs');
+        ligneCounter++;
+
+        const div = document.createElement('div');
+        div.className = 'row mb-2 align-items-end depense-input-row';
+        div.dataset.ligneId = ligneCounter;
+
+        // Créer le dropdown des types
+        let typesOptions = '<option value="">-- Sélectionner --</option>';
+        typesDepenses.forEach(type => {
+            typesOptions += `<option value="${type.id}" data-description-obligatoire="${type.description_obligatoire}">${type.nom}</option>`;
+        });
+
+        div.innerHTML = `
+            <div class="col-md-3">
+                <label class="form-label small mb-1">Type *</label>
+                <select class="form-select form-select-sm depense-type-select">
+                    ${typesOptions}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small mb-1">Montant (FCFA) *</label>
+                <input type="number"
+                       class="form-control form-control-sm depense-montant"
+                       placeholder="Montant"
+                       min="0"
+                       step="1">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small mb-1">Description</label>
+                <input type="text"
+                       class="form-control form-control-sm depense-description"
+                       placeholder="Description">
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-ligne" title="Retirer cette ligne">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+
+        container.appendChild(div);
+
+        // Gestionnaire pour la suppression de ligne
+        div.querySelector('.btn-remove-ligne').addEventListener('click', function() {
+            div.remove();
+        });
+    }
+
+    // Bouton "Ajouter une ligne"
+    document.getElementById('addDepenseLine').addEventListener('click', function() {
+        addDepenseInput();
     });
 
     // Fonction pour afficher la liste des dépenses existantes
@@ -1113,12 +1127,27 @@ document.addEventListener('DOMContentLoaded', function() {
         let hasError = false;
 
         rows.forEach(row => {
-            const typeId = row.querySelector('.depense-type-id').value;
+            const typeSelect = row.querySelector('.depense-type-select');
+            const typeId = typeSelect.value;
             const montant = row.querySelector('.depense-montant').value;
             const description = row.querySelector('.depense-description').value.trim();
 
-            // Ignorer les lignes vides
+            // Ignorer les lignes complètement vides
+            if (!typeId && !montant) {
+                return;
+            }
+
+            // Vérifier que le type est sélectionné
+            if (!typeId) {
+                showDepensesMessage('Veuillez sélectionner un type de dépense pour toutes les lignes', 'danger');
+                hasError = true;
+                return;
+            }
+
+            // Vérifier que le montant est renseigné et valide
             if (!montant || parseFloat(montant) <= 0) {
+                showDepensesMessage('Veuillez saisir un montant valide pour toutes les lignes', 'danger');
+                hasError = true;
                 return;
             }
 
