@@ -219,24 +219,24 @@ class VoyageBordereauView(GestionRequiredMixin, TemplateView):
                 from django.http import HttpResponseForbidden
                 return HttpResponseForbidden("Accès non autorisé")
 
-        # Récupérer les billets
-        billets = voyage.billets.select_related('guichetier').order_by('numero_siege')
+        # Récupérer uniquement les billets payés (exclure réservés et reportés)
+        billets = voyage.billets.filter(statut='paye').select_related('guichetier').order_by('numero_siege')
 
         # Récupérer les dépenses du voyage
         depenses = voyage.depenses.select_related('type_depense').order_by('type_depense__ordre', 'type_depense__nom')
         total_depenses = sum((d.montant for d in depenses), Decimal('0'))
 
         # Calculer les totaux
-        montant_total_billets = sum(b.montant for b in billets.filter(statut='paye'))
+        montant_total_billets = sum(b.montant for b in billets)
         recette_bagages = voyage.recette_bagages or Decimal('0')
         total_recettes = voyage.get_total_recettes()
         benefice_net = voyage.get_benefice_net()
 
         context['voyage'] = voyage
         context['billets'] = billets
-        context['billets_payes'] = billets.filter(statut='paye')
-        context['nb_billets_payes'] = billets.filter(statut='paye').count()
-        context['nb_billets_reserves'] = billets.filter(statut='reserve').count()
+        context['billets_payes'] = billets
+        context['nb_billets_payes'] = billets.count()
+        context['nb_billets_reserves'] = 0  # Non affichés sur le bordereau
         context['montant_total'] = montant_total_billets
         context['recette_bagages'] = recette_bagages
         context['total_recettes'] = total_recettes
@@ -271,8 +271,8 @@ class VoyageListePassagersView(GestionRequiredMixin, TemplateView):
                 from django.http import HttpResponseForbidden
                 return HttpResponseForbidden("Accès non autorisé")
 
-        # Récupérer les billets
-        billets = voyage.billets.select_related('destination', 'guichetier').order_by('numero_siege')
+        # Récupérer uniquement les billets payés (exclure réservés et reportés)
+        billets = voyage.billets.filter(statut='paye').select_related('destination', 'guichetier').order_by('numero_siege')
 
         context['voyage'] = voyage
         context['billets'] = billets
@@ -304,8 +304,8 @@ class VoyageRecapDestinationView(GestionRequiredMixin, TemplateView):
                 from django.http import HttpResponseForbidden
                 return HttpResponseForbidden("Accès non autorisé")
 
-        # Récupérer les billets avec leurs destinations
-        billets = voyage.billets.select_related('destination').all()
+        # Récupérer uniquement les billets payés (exclure réservés et reportés)
+        billets = voyage.billets.filter(statut='paye').select_related('destination').all()
 
         # Compter les passagers par destination (ordre alphabétique)
         destinations_count = {}
