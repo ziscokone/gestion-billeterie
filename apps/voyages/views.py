@@ -530,6 +530,7 @@ def get_voyage_depenses(request, pk):
             {
                 'id': d.id,
                 'type_depense_id': d.type_depense.id,
+                'type_depense_code': d.type_depense.code,
                 'type_depense_nom': d.type_depense.nom,
                 'montant': float(d.montant),
                 'description': d.description or '',
