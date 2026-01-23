@@ -18,6 +18,7 @@ from apps.compagnie.models import Compagnie
 from apps.personnel.models import Chauffeur, Convoyeur
 from apps.comptabilite.models import TypeDepense, Depense
 from apps.vehicules.models import Vehicule
+from apps.billets.models import Billet, HistoriqueReport
 
 
 class VoyageListView(GestionRequiredMixin, ListView):
@@ -786,3 +787,309 @@ def terminer_voyage(request, pk):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ==================== GESTION DU REPORT DE BILLETS ====================
+
+@require_http_methods(["GET"])
+def get_voyages_report(request, billet_id):
+    """
+    Vue AJAX pour récupérer la liste des voyages disponibles pour le report d'un billet.
+    Retourne les voyages à venir de la même ligne, groupés par date.
+    """
+    try:
+        # Récupérer le billet
+        billet = get_object_or_404(Billet, pk=billet_id)
+        voyage_actuel = billet.voyage
+
+        # Vérifier les permissions
+        user = request.user
+        if not user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Non authentifié'}, status=401)
+
+        if not user.has_global_access and user.gare:
+            if voyage_actuel.gare != user.gare:
+                return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
+
+        # Récupérer les voyages à venir de la même ligne (exclure le voyage actuel)
+        date_aujourdhui = timezone.now().date()
+        voyages_disponibles = Voyage.objects.filter(
+            gare=voyage_actuel.gare,
+            ligne=voyage_actuel.ligne,
+            date_depart__gte=date_aujourdhui,
+            statut__in=['programme', 'en_cours']
+        ).exclude(
+            pk=voyage_actuel.pk  # Exclure le voyage actuel
+        ).select_related(
+            'vehicule', 'vehicule__modele'
+        ).order_by('date_depart', 'heure_depart')
+
+        # Grouper les voyages par date
+        voyages_groupes = {}
+        for voyage in voyages_disponibles:
+            date_str = voyage.date_depart.strftime('%Y-%m-%d')
+            date_display = voyage.date_depart.strftime('%d/%m/%Y')
+
+            # Déterminer le label du groupe
+            if voyage.date_depart == date_aujourdhui:
+                groupe_label = f"Aujourd'hui ({date_display})"
+            elif voyage.date_depart == date_aujourdhui + timedelta(days=1):
+                groupe_label = f"Demain ({date_display})"
+            else:
+                groupe_label = date_display
+
+            if groupe_label not in voyages_groupes:
+                voyages_groupes[groupe_label] = []
+
+            # Calculer les places libres
+            places_libres = len(voyage.get_sieges_disponibles())
+
+            voyages_groupes[groupe_label].append({
+                'id': voyage.id,
+                'heure_depart': voyage.heure_depart.strftime('%H:%M'),
+                'periode': voyage.get_periode_display(),
+                'numero_depart': voyage.numero_depart,
+                'places_libres': places_libres,
+                'capacite': voyage.capacite,
+                'vehicule': voyage.vehicule.immatriculation if voyage.vehicule else 'Non assigné'
+            })
+
+        return JsonResponse({
+            'success': True,
+            'voyages': voyages_groupes,
+            'billet': {
+                'numero': billet.numero,
+                'client_nom': billet.client_nom,
+                'client_telephone': billet.client_telephone,
+                'siege_actuel': billet.numero_siege,
+                'montant': float(billet.montant)
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@require_http_methods(["GET"])
+def get_disposition_voyage(request, voyage_id):
+    """
+    Vue AJAX pour récupérer la disposition des sièges d'un voyage.
+    """
+    try:
+        # Récupérer le voyage
+        voyage = get_object_or_404(Voyage, pk=voyage_id)
+
+        # Vérifier les permissions
+        user = request.user
+        if not user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Non authentifié'}, status=401)
+
+        if not user.has_global_access and user.gare:
+            if voyage.gare != user.gare:
+                return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
+
+        # Vérifier si le voyage a un véhicule assigné
+        if not voyage.vehicule:
+            return JsonResponse({
+                'success': False,
+                'error': 'Ce voyage n\'a pas de véhicule assigné'
+            }, status=400)
+
+        # Récupérer la disposition
+        disposition = voyage.vehicule.modele.get_disposition_pour_affichage(voyage)
+
+        return JsonResponse({
+            'success': True,
+            'disposition': disposition,
+            'capacite': voyage.capacite,
+            'places_libres': len(voyage.get_sieges_disponibles())
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@require_http_methods(["POST"])
+def reporter_billet(request, billet_id):
+    """
+    Vue AJAX pour reporter un billet vers un autre voyage.
+    """
+    try:
+        # Récupérer le billet
+        ancien_billet = get_object_or_404(Billet, pk=billet_id)
+        voyage_actuel = ancien_billet.voyage
+
+        # Vérifier les permissions
+        user = request.user
+        if not user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Non authentifié'}, status=401)
+
+        if not user.has_global_access and user.gare:
+            if voyage_actuel.gare != user.gare:
+                return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
+
+        # Récupérer les données JSON
+        data = json.loads(request.body)
+        nouveau_voyage_id = data.get('nouveau_voyage_id')
+        nouveau_siege = data.get('nouveau_siege')
+        motif = data.get('motif', '')
+
+        # Validation
+        if not nouveau_voyage_id:
+            return JsonResponse({'success': False, 'error': 'Le nouveau voyage doit être spécifié'}, status=400)
+
+        if not nouveau_siege:
+            return JsonResponse({'success': False, 'error': 'Le nouveau siège doit être spécifié'}, status=400)
+
+        if not motif:
+            return JsonResponse({'success': False, 'error': 'Le motif du report doit être spécifié'}, status=400)
+
+        # Vérifier que le billet n'a pas déjà été reporté
+        if ancien_billet.statut == 'reporte':
+            return JsonResponse({
+                'success': False,
+                'error': 'Ce billet a déjà été reporté'
+            }, status=400)
+
+        # Récupérer le nouveau voyage
+        nouveau_voyage = get_object_or_404(Voyage, pk=nouveau_voyage_id)
+
+        # Vérifier que le voyage est de la même gare et ligne
+        if nouveau_voyage.gare != voyage_actuel.gare:
+            return JsonResponse({
+                'success': False,
+                'error': 'Le nouveau voyage doit être de la même gare'
+            }, status=400)
+
+        if nouveau_voyage.ligne != voyage_actuel.ligne:
+            return JsonResponse({
+                'success': False,
+                'error': 'Le nouveau voyage doit être de la même ligne'
+            }, status=400)
+
+        # Vérifier que le siège est disponible
+        if not nouveau_voyage.siege_disponible(nouveau_siege):
+            return JsonResponse({
+                'success': False,
+                'error': f'Le siège {nouveau_siege} n\'est pas disponible sur le nouveau voyage'
+            }, status=400)
+
+        # 1. Créer le NOUVEAU billet (montant = 0 car déjà payé)
+        numero_nouveau_billet = voyage_actuel.gare.generer_numero_ticket()
+        nouveau_billet = Billet.objects.create(
+            numero=numero_nouveau_billet,
+            voyage=nouveau_voyage,
+            destination=ancien_billet.destination,
+            client_nom=ancien_billet.client_nom,
+            client_telephone=ancien_billet.client_telephone,
+            numero_siege=nouveau_siege,
+            montant=0,  # Déjà payé dans l'ancien billet
+            statut='paye',
+            moyen_paiement=ancien_billet.moyen_paiement,
+            guichetier=user,
+            date_paiement=timezone.now()
+        )
+
+        # 2. Modifier l'ANCIEN billet (statut = reporté)
+        ancien_billet.statut = 'reporte'
+        ancien_billet.reporte_vers_billet = nouveau_billet
+        ancien_billet.date_report = timezone.now()
+        ancien_billet.guichetier_report = user
+        ancien_billet.motif_report = motif
+        ancien_billet.save(update_fields=['statut', 'reporte_vers_billet', 'date_report', 'guichetier_report', 'motif_report', 'date_modification'])
+
+        # 3. Créer l'historique de report
+        HistoriqueReport.objects.create(
+            ancien_billet=ancien_billet,
+            nouveau_billet=nouveau_billet,
+            ancien_voyage=voyage_actuel,
+            nouveau_voyage=nouveau_voyage,
+            ancien_siege=ancien_billet.numero_siege,
+            nouveau_siege=nouveau_siege,
+            guichetier=user,
+            motif=motif
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Billet reporté avec succès. Nouveau billet: {nouveau_billet.numero}',
+            'ancien_billet': ancien_billet.numero,
+            'nouveau_billet': nouveau_billet.numero,
+            'nouveau_voyage': f"{nouveau_voyage.date_depart.strftime('%d/%m/%Y')} - {nouveau_voyage.heure_depart.strftime('%H:%M')}",
+            'nouveau_siege': nouveau_siege
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Données JSON invalides'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+class DashboardReportsView(GestionRequiredMixin, TemplateView):
+    """Vue pour le dashboard des reports de billets."""
+    template_name = 'voyages/dashboard_reports.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Filtres
+        date_debut = self.request.GET.get('date_debut')
+        date_fin = self.request.GET.get('date_fin')
+        guichetier_id = self.request.GET.get('guichetier')
+
+        # Query de base
+        reports = HistoriqueReport.objects.select_related(
+            'ancien_billet',
+            'nouveau_billet',
+            'ancien_voyage',
+            'nouveau_voyage',
+            'guichetier'
+        )
+
+        # Filtrer par gare si l'utilisateur n'a pas l'accès global
+        if not self.request.user.has_global_access and self.request.user.gare:
+            reports = reports.filter(ancien_voyage__gare=self.request.user.gare)
+
+        # Appliquer les filtres de date
+        if date_debut:
+            reports = reports.filter(date_report__date__gte=date_debut)
+        if date_fin:
+            reports = reports.filter(date_report__date__lte=date_fin)
+
+        # Filtrer par guichetier
+        if guichetier_id:
+            reports = reports.filter(guichetier_id=guichetier_id)
+
+        # Statistiques
+        total_reports = reports.count()
+
+        # Grouper par guichetier
+        from django.db.models import Sum
+        stats_guichetiers = reports.values(
+            'guichetier__nom_complet'
+        ).annotate(
+            nb_reports=Count('id'),
+            montant_total=Sum('ancien_billet__montant')
+        ).order_by('-nb_reports')
+
+        # Grouper par motif
+        stats_motifs = reports.values('motif').annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]
+
+        # Liste des guichetiers pour le filtre
+        from apps.personnel.models import Utilisateur
+        guichetiers = Utilisateur.objects.filter(
+            role__in=['guichetier', 'gestionnaire']
+        ).order_by('nom_complet')
+
+        context['reports'] = reports.order_by('-date_report')[:100]  # Limiter à 100 derniers
+        context['total_reports'] = total_reports
+        context['stats_guichetiers'] = stats_guichetiers
+        context['stats_motifs'] = stats_motifs
+        context['guichetiers'] = guichetiers
+        context['date_debut'] = date_debut
+        context['date_fin'] = date_fin
+        context['guichetier_id'] = guichetier_id
+
+        return context

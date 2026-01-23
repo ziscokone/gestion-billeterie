@@ -209,6 +209,10 @@
                                         {% elif billet.moyen_paiement == 'moov_money' %}
                                             <span class="badge" style="background-color: #003366;">Moov</span>
                                         {% endif %}
+                                    {% elif billet.statut == 'reporte' %}
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-arrow-repeat me-1"></i>Reporté
+                                        </span>
                                     {% else %}
                                         <span class="badge bg-warning">Réservé</span>
                                     {% endif %}
@@ -220,6 +224,19 @@
                                             title="Réimprimer (Duplicata)">
                                         <i class="bi bi-printer"></i>
                                     </button>
+                                    {% if billet.statut == 'paye' %}
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-warning btn-reporter"
+                                            data-billet-id="{{ billet.pk }}"
+                                            data-billet-numero="{{ billet.numero }}"
+                                            data-client-nom="{{ billet.client_nom }}"
+                                            data-client-telephone="{{ billet.client_telephone }}"
+                                            data-siege="{{ billet.numero_siege }}"
+                                            data-montant="{{ billet.montant }}"
+                                            title="Reporter ce billet">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -504,6 +521,88 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                 <button type="button" class="btn btn-success" id="confirmTerminerBtn">
                     <i class="bi bi-check-circle me-2"></i>Confirmer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reporter un billet -->
+<div class="modal fade" id="reporterBilletModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-arrow-repeat me-2"></i>Reporter le Billet
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reporterBilletForm">
+                    {% csrf_token %}
+
+                    <!-- Informations du billet actuel -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <strong>Informations du billet</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Numéro :</strong> <span id="report_billet_numero"></span></p>
+                                    <p class="mb-1"><strong>Client :</strong> <span id="report_client_nom"></span></p>
+                                    <p class="mb-1"><strong>Téléphone :</strong> <span id="report_client_telephone"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Siège actuel :</strong> <span id="report_siege_actuel"></span></p>
+                                    <p class="mb-1"><strong>Montant payé :</strong> <span id="report_montant"></span> FCFA</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sélection du nouveau voyage -->
+                    <div class="mb-3">
+                        <label for="nouveau_voyage_select" class="form-label fw-bold">
+                            <i class="bi bi-calendar3 me-1"></i>Nouveau voyage
+                        </label>
+                        <select class="form-select" id="nouveau_voyage_select" name="nouveau_voyage_id" required>
+                            <option value="">-- Sélectionner un voyage --</option>
+                        </select>
+                        <div class="form-text">Choisissez le voyage vers lequel reporter ce billet</div>
+                    </div>
+
+                    <!-- Disposition des sièges -->
+                    <div id="disposition_container" style="display: none;">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-grid-3x3 me-1"></i>Sélectionnez le nouveau siège
+                        </label>
+                        <div id="disposition_sieges" class="border rounded p-3 mb-3" style="max-height: 400px; overflow-y: auto;">
+                            <!-- La disposition sera chargée dynamiquement -->
+                        </div>
+                        <input type="hidden" id="nouveau_siege_input" name="nouveau_siege" required>
+                        <div class="form-text mb-3">
+                            Places disponibles : <span id="places_disponibles_count">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Motif du report -->
+                    <div class="mb-3">
+                        <label for="motif_report" class="form-label fw-bold">
+                            <i class="bi bi-chat-left-text me-1"></i>Motif du report
+                        </label>
+                        <textarea class="form-control" id="motif_report" name="motif" rows="3" required placeholder="Ex: Trop de bagages, Raison familiale, etc."></textarea>
+                        <div class="form-text">Veuillez préciser la raison du report</div>
+                    </div>
+
+                    <!-- Message de retour -->
+                    <div id="reporterBilletMessage" class="alert d-none"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-warning" id="confirmReportBtn">
+                    <i class="bi bi-arrow-repeat me-2"></i>Confirmer le Report
                 </button>
             </div>
         </div>
@@ -1127,6 +1226,251 @@ document.addEventListener('DOMContentLoaded', function() {
             messageDiv.className = `alert alert-${type} mt-3`;
             messageDiv.textContent = message;
             messageDiv.classList.remove('d-none');
+        }
+    }
+
+    // ========== GESTION DU REPORT DE BILLETS ==========
+
+    const reporterBilletModal = new bootstrap.Modal(document.getElementById('reporterBilletModal'));
+    let currentBilletId = null;
+    let siegeSelectionne = null;
+
+    // Gérer le clic sur le bouton "Reporter"
+    document.querySelectorAll('.btn-reporter').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentBilletId = this.dataset.billetId;
+            const billetNumero = this.dataset.billetNumero;
+            const clientNom = this.dataset.clientNom;
+            const clientTelephone = this.dataset.clientTelephone;
+            const siege = this.dataset.siege;
+            const montant = this.dataset.montant;
+
+            // Remplir les informations du billet
+            document.getElementById('report_billet_numero').textContent = billetNumero;
+            document.getElementById('report_client_nom').textContent = clientNom;
+            document.getElementById('report_client_telephone').textContent = clientTelephone;
+            document.getElementById('report_siege_actuel').textContent = siege;
+            document.getElementById('report_montant').textContent = montant;
+
+            // Réinitialiser le formulaire
+            document.getElementById('nouveau_voyage_select').innerHTML = '<option value="">-- Chargement... --</option>';
+            document.getElementById('disposition_container').style.display = 'none';
+            document.getElementById('motif_report').value = '';
+            siegeSelectionne = null;
+            document.getElementById('reporterBilletMessage').classList.add('d-none');
+
+            // Charger les voyages disponibles
+            fetch(`/voyages/billets/${currentBilletId}/report/voyages/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const select = document.getElementById('nouveau_voyage_select');
+                        select.innerHTML = '<option value="">-- Sélectionner un voyage --</option>';
+
+                        // Grouper les voyages par date
+                        for (const [groupe, voyages] of Object.entries(data.voyages)) {
+                            const optgroup = document.createElement('optgroup');
+                            optgroup.label = groupe;
+
+                            voyages.forEach(voyage => {
+                                const option = document.createElement('option');
+                                option.value = voyage.id;
+                                option.textContent = `${voyage.heure_depart} - ${voyage.periode} (Départ ${voyage.numero_depart}) - ${voyage.places_libres}/${voyage.capacite} places libres`;
+                                optgroup.appendChild(option);
+                            });
+
+                            select.appendChild(optgroup);
+                        }
+                    } else {
+                        showReportMessage(data.error || 'Erreur lors du chargement des voyages', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showReportMessage('Erreur de connexion', 'danger');
+                });
+
+            reporterBilletModal.show();
+        });
+    });
+
+    // Gérer le changement de voyage sélectionné
+    document.getElementById('nouveau_voyage_select').addEventListener('change', function() {
+        const voyageId = this.value;
+        siegeSelectionne = null;
+        document.getElementById('nouveau_siege_input').value = '';
+
+        if (!voyageId) {
+            document.getElementById('disposition_container').style.display = 'none';
+            return;
+        }
+
+        // Charger la disposition du voyage sélectionné
+        fetch(`/voyages/voyages/${voyageId}/disposition/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    afficherDisposition(data.disposition);
+                    document.getElementById('places_disponibles_count').textContent = data.places_libres;
+                    document.getElementById('disposition_container').style.display = 'block';
+                } else {
+                    showReportMessage(data.error || 'Erreur lors du chargement de la disposition', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                showReportMessage('Erreur de connexion', 'danger');
+            });
+    });
+
+    // Fonction pour afficher la disposition des sièges
+    function afficherDisposition(disposition) {
+        const container = document.getElementById('disposition_sieges');
+        container.innerHTML = '';
+
+        if (!disposition || !disposition.rangees) {
+            container.innerHTML = '<p class="text-muted">Aucune disposition disponible</p>';
+            return;
+        }
+
+        disposition.rangees.forEach(rangee => {
+            const rangeeDiv = document.createElement('div');
+            rangeeDiv.className = 'd-flex justify-content-center align-items-center mb-2';
+
+            rangee.sieges.forEach(siege => {
+                if (siege === null) {
+                    // Allée
+                    const alleeDiv = document.createElement('div');
+                    alleeDiv.className = 'mx-2';
+                    alleeDiv.style.width = '30px';
+                    rangeeDiv.appendChild(alleeDiv);
+                } else {
+                    // Siège
+                    const siegeBtn = document.createElement('button');
+                    siegeBtn.type = 'button';
+                    siegeBtn.className = 'btn btn-sm m-1';
+                    siegeBtn.style.width = '50px';
+                    siegeBtn.style.height = '40px';
+
+                    if (typeof siege === 'object') {
+                        siegeBtn.textContent = siege.numero;
+                        if (siege.statut === 'disponible') {
+                            siegeBtn.classList.add('btn-outline-success');
+                            siegeBtn.addEventListener('click', function() {
+                                selectionnerSiege(siege.numero);
+                            });
+                        } else {
+                            siegeBtn.classList.add('btn-secondary');
+                            siegeBtn.disabled = true;
+                        }
+                    } else {
+                        siegeBtn.textContent = siege;
+                        siegeBtn.classList.add('btn-outline-success');
+                        siegeBtn.addEventListener('click', function() {
+                            selectionnerSiege(siege);
+                        });
+                    }
+
+                    rangeeDiv.appendChild(siegeBtn);
+                }
+            });
+
+            container.appendChild(rangeeDiv);
+        });
+    }
+
+    // Fonction pour sélectionner un siège
+    function selectionnerSiege(numeroSiege) {
+        // Désélectionner tous les sièges
+        document.querySelectorAll('#disposition_sieges .btn').forEach(btn => {
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-outline-success');
+        });
+
+        // Sélectionner le siège cliqué
+        event.target.classList.remove('btn-outline-success');
+        event.target.classList.add('btn-warning');
+
+        siegeSelectionne = numeroSiege;
+        document.getElementById('nouveau_siege_input').value = numeroSiege;
+    }
+
+    // Confirmer le report
+    document.getElementById('confirmReportBtn').addEventListener('click', function() {
+        const nouveauVoyageId = document.getElementById('nouveau_voyage_select').value;
+        const motif = document.getElementById('motif_report').value;
+
+        // Validation
+        if (!nouveauVoyageId) {
+            showReportMessage('Veuillez sélectionner un voyage', 'warning');
+            return;
+        }
+
+        if (!siegeSelectionne) {
+            showReportMessage('Veuillez sélectionner un siège', 'warning');
+            return;
+        }
+
+        if (!motif.trim()) {
+            showReportMessage('Veuillez saisir le motif du report', 'warning');
+            return;
+        }
+
+        // Désactiver le bouton
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Traitement...';
+
+        // Envoyer la requête
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/voyages/billets/${currentBilletId}/report/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                nouveau_voyage_id: nouveauVoyageId,
+                nouveau_siege: siegeSelectionne,
+                motif: motif
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showReportMessage(data.message, 'success');
+
+                // Recharger la page après 2 secondes
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showReportMessage(data.error || 'Erreur lors du report', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Confirmer le Report';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showReportMessage('Erreur de connexion', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Confirmer le Report';
+        });
+    });
+
+    // Fonction pour afficher un message dans le modal de report
+    function showReportMessage(message, type) {
+        const messageDiv = document.getElementById('reporterBilletMessage');
+        messageDiv.className = `alert alert-${type}`;
+        messageDiv.textContent = message;
+        messageDiv.classList.remove('d-none');
+
+        // Masquer le message après 5 secondes sauf pour les succès
+        if (type !== 'success') {
+            setTimeout(() => {
+                messageDiv.classList.add('d-none');
+            }, 5000);
         }
     }
 });

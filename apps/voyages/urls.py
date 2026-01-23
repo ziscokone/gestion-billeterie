@@ -23,4 +23,10 @@ urlpatterns = [
     path('<int:pk>/bagages/save/', views.save_voyage_bagages, name='voyage_save_bagages'),
     # Route AJAX pour terminer un voyage
     path('<int:pk>/terminer/', views.terminer_voyage, name='voyage_terminer'),
+    # Routes AJAX pour la gestion du report de billets
+    path('billets/<int:billet_id>/report/voyages/', views.get_voyages_report, name='get_voyages_report'),
+    path('billets/<int:billet_id>/report/', views.reporter_billet, name='reporter_billet'),
+    path('voyages/<int:voyage_id>/disposition/', views.get_disposition_voyage, name='get_disposition_voyage'),
+    # Dashboard des reports
+    path('dashboard/reports/', views.DashboardReportsView.as_view(), name='dashboard_reports'),
 ]

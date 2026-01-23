@@ -131,7 +131,8 @@ class Voyage(models.Model):
             return []
 
         sieges_vendables = self.vehicule.get_sieges_vendables()
-        sieges_pris = self.billets.values_list('numero_siege', flat=True)
+        # Exclure les billets reportés - seuls les billets 'reserve' et 'paye' comptent
+        sieges_pris = self.billets.exclude(statut='reporte').values_list('numero_siege', flat=True)
 
         return [s for s in sieges_vendables if s not in sieges_pris]
 

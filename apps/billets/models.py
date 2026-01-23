@@ -10,6 +10,7 @@ class Billet(models.Model):
     STATUT_CHOICES = [
         ('reserve', 'Réservé'),
         ('paye', 'Payé'),
+        ('reporte', 'Reporté'),
     ]
 
     MOYEN_PAIEMENT_CHOICES = [
@@ -73,6 +74,33 @@ class Billet(models.Model):
         verbose_name="Date de paiement"
     )
     date_modification = models.DateTimeField(auto_now=True)
+
+    # Champs pour la gestion des reports
+    reporte_vers_billet = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='billet_origine',
+        verbose_name="Reporté vers le billet"
+    )
+    date_report = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Date du report"
+    )
+    guichetier_report = models.ForeignKey(
+        'personnel.Utilisateur',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reports_effectues',
+        verbose_name="Guichetier ayant effectué le report"
+    )
+    motif_report = models.TextField(
+        blank=True,
+        verbose_name="Motif du report"
+    )
 
     class Meta:
         verbose_name = "Billet"
@@ -248,3 +276,53 @@ class Billet(models.Model):
                     continue
 
         return billets_crees
+
+
+class HistoriqueReport(models.Model):
+    """
+    Modèle pour tracer l'historique des reports de billets.
+    """
+    ancien_billet = models.ForeignKey(
+        Billet,
+        on_delete=models.CASCADE,
+        related_name='historique_ancien',
+        verbose_name="Ancien billet"
+    )
+    nouveau_billet = models.ForeignKey(
+        Billet,
+        on_delete=models.CASCADE,
+        related_name='historique_nouveau',
+        verbose_name="Nouveau billet"
+    )
+    ancien_voyage = models.ForeignKey(
+        'voyages.Voyage',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='reports_depuis',
+        verbose_name="Ancien voyage"
+    )
+    nouveau_voyage = models.ForeignKey(
+        'voyages.Voyage',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='reports_vers',
+        verbose_name="Nouveau voyage"
+    )
+    ancien_siege = models.PositiveIntegerField(verbose_name="Ancien siège")
+    nouveau_siege = models.PositiveIntegerField(verbose_name="Nouveau siège")
+    guichetier = models.ForeignKey(
+        'personnel.Utilisateur',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Guichetier"
+    )
+    motif = models.TextField(verbose_name="Motif du report")
+    date_report = models.DateTimeField(auto_now_add=True, verbose_name="Date du report")
+
+    class Meta:
+        verbose_name = "Historique de report"
+        verbose_name_plural = "Historiques de reports"
+        ordering = ['-date_report']
+
+    def __str__(self):
+        return f"Report {self.ancien_billet.numero} → {self.nouveau_billet.numero} ({self.date_report.strftime('%d/%m/%Y %H:%M')})"
