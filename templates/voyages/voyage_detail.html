@@ -224,7 +224,7 @@
                                             title="Réimprimer (Duplicata)">
                                         <i class="bi bi-printer"></i>
                                     </button>
-                                    {% if billet.statut == 'paye' %}
+                                    {% if billet.statut == 'paye' and voyage.statut != 'termine' %}
                                     <button type="button"
                                             class="btn btn-sm btn-outline-warning btn-reporter"
                                             data-billet-id="{{ billet.pk }}"

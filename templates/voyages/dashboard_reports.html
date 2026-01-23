@@ -28,7 +28,20 @@
                     <label for="date_fin" class="form-label">Date fin</label>
                     <input type="date" class="form-control" id="date_fin" name="date_fin" value="{{ date_fin }}">
                 </div>
-                <div class="col-md-4">
+                {% if gares %}
+                <div class="col-md-3">
+                    <label for="gare" class="form-label">Gare</label>
+                    <select class="form-select" id="gare" name="gare">
+                        <option value="">Toutes les gares</option>
+                        {% for gare in gares %}
+                        <option value="{{ gare.id }}" {% if gare_id == gare.id|stringformat:"s" %}selected{% endif %}>
+                            {{ gare.nom }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="{% if gares %}col-md-2{% else %}col-md-4{% endif %}">
                     <label for="guichetier" class="form-label">Guichetier</label>
                     <select class="form-select" id="guichetier" name="guichetier">
                         <option value="">Tous les guichetiers</option>
@@ -39,7 +52,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="{% if gares %}col-md-1{% else %}col-md-2{% endif %} d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-search me-2"></i>Filtrer
                     </button>

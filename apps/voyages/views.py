@@ -1078,6 +1078,7 @@ class DashboardReportsView(GestionRequiredMixin, TemplateView):
         date_debut = self.request.GET.get('date_debut')
         date_fin = self.request.GET.get('date_fin')
         guichetier_id = self.request.GET.get('guichetier')
+        gare_id = self.request.GET.get('gare')
 
         # Query de base
         reports = HistoriqueReport.objects.select_related(
@@ -1085,12 +1086,16 @@ class DashboardReportsView(GestionRequiredMixin, TemplateView):
             'nouveau_billet',
             'ancien_voyage',
             'nouveau_voyage',
+            'ancien_voyage__gare',
             'guichetier'
         )
 
         # Filtrer par gare si l'utilisateur n'a pas l'accès global
         if not self.request.user.has_global_access and self.request.user.gare:
             reports = reports.filter(ancien_voyage__gare=self.request.user.gare)
+        # Pour les utilisateurs avec accès global, appliquer le filtre par gare si spécifié
+        elif self.request.user.has_global_access and gare_id:
+            reports = reports.filter(ancien_voyage__gare_id=gare_id)
 
         # Appliquer les filtres de date
         if date_debut:
@@ -1121,17 +1126,32 @@ class DashboardReportsView(GestionRequiredMixin, TemplateView):
 
         # Liste des guichetiers pour le filtre
         from apps.personnel.models import Utilisateur
-        guichetiers = Utilisateur.objects.filter(
-            role__in=['guichetier', 'gestionnaire']
-        ).order_by('nom_complet')
+        from apps.gares.models import Gare
+
+        # Si l'utilisateur a accès global, afficher tous les guichetiers
+        # Sinon, afficher uniquement les guichetiers de sa gare
+        if self.request.user.has_global_access:
+            guichetiers = Utilisateur.objects.filter(
+                role__in=['guichetier', 'gestionnaire', 'chef_gare']
+            ).order_by('nom_complet')
+            # Liste des gares pour le filtre (uniquement pour accès global)
+            gares = Gare.objects.filter(active=True).order_by('nom')
+        else:
+            guichetiers = Utilisateur.objects.filter(
+                role__in=['guichetier', 'gestionnaire', 'chef_gare'],
+                gare=self.request.user.gare
+            ).order_by('nom_complet')
+            gares = None
 
         context['reports'] = reports.order_by('-date_report')[:100]  # Limiter à 100 derniers
         context['total_reports'] = total_reports
         context['stats_guichetiers'] = stats_guichetiers
         context['stats_motifs'] = stats_motifs
         context['guichetiers'] = guichetiers
+        context['gares'] = gares
         context['date_debut'] = date_debut
         context['date_fin'] = date_fin
         context['guichetier_id'] = guichetier_id
+        context['gare_id'] = gare_id
 
         return context

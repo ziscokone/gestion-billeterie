@@ -75,6 +75,13 @@
                                 </a>
                             </li>
                             {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Opérations</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'voyages:dashboard_reports' %}">
+                                    <i class="bi bi-arrow-repeat me-2"></i> Reports de billets
+                                </a>
+                            </li>
                             {% if user.is_super_admin %}
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">Flotte</h6></li>
