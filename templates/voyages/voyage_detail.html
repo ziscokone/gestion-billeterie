@@ -445,6 +445,98 @@
     </div>
 </div>
 
+<!-- Modal Création de Réparation depuis Dépense -->
+<div class="modal fade" id="creerReparationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-tools me-2"></i>Créer une Fiche de Réparation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="creerReparationForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="reparation_depense_id" name="depense_id">
+
+                    <!-- Véhicule -->
+                    <div class="mb-3">
+                        <label for="reparation_vehicule_id" class="form-label fw-bold">
+                            <i class="bi bi-truck me-1"></i>Véhicule *
+                        </label>
+                        <select class="form-select" id="reparation_vehicule_id" name="vehicule_id" required>
+                            <option value="">-- Sélectionner un véhicule --</option>
+                        </select>
+                    </div>
+
+                    <!-- Date de réparation -->
+                    <div class="mb-3">
+                        <label for="reparation_date" class="form-label fw-bold">
+                            <i class="bi bi-calendar3 me-1"></i>Date de réparation *
+                        </label>
+                        <input type="date" class="form-control" id="reparation_date" name="date_reparation" required>
+                    </div>
+
+                    <!-- Type de réparation -->
+                    <div class="mb-3">
+                        <label for="reparation_type_id" class="form-label fw-bold">
+                            <i class="bi bi-wrench me-1"></i>Type de réparation *
+                        </label>
+                        <select class="form-select" id="reparation_type_id" name="type_reparation_id" required>
+                            <option value="">-- Sélectionner un type --</option>
+                        </select>
+                    </div>
+
+                    <!-- Montant (readonly pour le guichetier) -->
+                    <div class="mb-3">
+                        <label for="reparation_montant" class="form-label fw-bold">
+                            <i class="bi bi-cash-stack me-1"></i>Montant (FCFA) *
+                        </label>
+                        <input type="number" class="form-control" id="reparation_montant" name="montant" readonly>
+                        <div class="form-text text-muted">
+                            <i class="bi bi-lock-fill me-1"></i>Montant copié depuis la dépense (modifiable uniquement par le Manager)
+                        </div>
+                    </div>
+
+                    <!-- Garage/Prestataire -->
+                    <div class="mb-3">
+                        <label for="reparation_garage" class="form-label fw-bold">
+                            <i class="bi bi-shop me-1"></i>Garage/Prestataire *
+                        </label>
+                        <input type="text" class="form-control" id="reparation_garage" name="garage_prestataire" placeholder="Nom du garage ou prestataire" required>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="reparation_description" class="form-label fw-bold">
+                            <i class="bi bi-chat-left-text me-1"></i>Description
+                        </label>
+                        <textarea class="form-control" id="reparation_description" name="description" rows="3" placeholder="Description du problème"></textarea>
+                        <div class="form-text">Description copiée depuis la dépense (modifiable)</div>
+                    </div>
+
+                    <!-- Info sur les champs réservés au Manager -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Note :</strong> Les détails techniques (kilométrage, pièces remplacées) seront complétés par le Manager.
+                        La réparation sera créée avec le statut "En attente".
+                    </div>
+
+                    <!-- Message de retour -->
+                    <div id="creerReparationMessage" class="alert d-none"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-warning" id="saveReparationBtn">
+                    <i class="bi bi-tools me-2"></i>Créer la Réparation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Recette Bagages -->
 <div class="modal fade" id="bagagesModal" tabindex="-1">
     <div class="modal-dialog">
@@ -947,12 +1039,44 @@ document.addEventListener('DOMContentLoaded', function() {
                         <th>Description</th>
                         <th>Saisi par</th>
                         <th>Date</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
 
         depensesExistantes.forEach(depense => {
+            // Déterminer l'action à afficher
+            let actionHtml = '-';
+            if (depense.type_depense_nom === 'Réparation') {
+                if (depense.reparation_id) {
+                    // Réparation déjà créée
+                    actionHtml = `
+                        <span class="badge bg-success" title="Réparation créée">
+                            <i class="bi bi-check-circle me-1"></i>Réparation créée
+                        </span>
+                    `;
+                } else if (depense.peut_creer_reparation) {
+                    // Peut créer une réparation
+                    actionHtml = `
+                        <button type="button" class="btn btn-sm btn-warning btn-creer-reparation"
+                                data-depense-id="${depense.id}"
+                                data-montant="${depense.montant}"
+                                data-description="${depense.description || ''}"
+                                title="Créer une fiche de réparation">
+                            <i class="bi bi-tools me-1"></i>Créer Réparation
+                        </button>
+                    `;
+                } else {
+                    // Véhicule manquant
+                    actionHtml = `
+                        <span class="badge bg-secondary" title="Véhicule non assigné au voyage">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Véhicule requis
+                        </span>
+                    `;
+                }
+            }
+
             html += `
                 <tr>
                     <td><strong>${depense.type_depense_nom}</strong></td>
@@ -960,6 +1084,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${depense.description || '<em class="text-muted">-</em>'}</td>
                     <td><small>${depense.guichetier}</small></td>
                     <td><small>${depense.date_creation}</small></td>
+                    <td class="text-center">${actionHtml}</td>
                 </tr>
             `;
         });
@@ -1462,6 +1587,192 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fonction pour afficher un message dans le modal de report
     function showReportMessage(message, type) {
         const messageDiv = document.getElementById('reporterBilletMessage');
+        messageDiv.className = `alert alert-${type}`;
+        messageDiv.textContent = message;
+        messageDiv.classList.remove('d-none');
+
+        // Masquer le message après 5 secondes sauf pour les succès
+        if (type !== 'success') {
+            setTimeout(() => {
+                messageDiv.classList.add('d-none');
+            }, 5000);
+        }
+    }
+
+    // ========== GESTION DE LA CRÉATION DE RÉPARATION DEPUIS DÉPENSE ==========
+
+    const creerReparationModal = new bootstrap.Modal(document.getElementById('creerReparationModal'));
+    let currentDepenseIdForReparation = null;
+
+    // Charger les véhicules actifs pour le dropdown
+    function chargerVehiculesReparation() {
+        fetch(`/voyages/${voyageId}/agents/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const vehiculeSelect = document.getElementById('reparation_vehicule_id');
+                    vehiculeSelect.innerHTML = '<option value="">-- Sélectionner un véhicule --</option>';
+
+                    if (data.vehicules && data.vehicules.length > 0) {
+                        data.vehicules.forEach(vehicule => {
+                            const option = document.createElement('option');
+                            option.value = vehicule.id;
+                            option.textContent = `${vehicule.immatriculation} - ${vehicule.modele_nom}`;
+                            if (data.voyage.vehicule_id === vehicule.id) {
+                                option.selected = true;
+                            }
+                            vehiculeSelect.appendChild(option);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+            });
+    }
+
+    // Charger les types de réparation actifs
+    function chargerTypesReparation() {
+        // Charger depuis l'API des types de réparation
+        fetch('/vehicules/api/types-reparation/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const typeSelect = document.getElementById('reparation_type_id');
+                    typeSelect.innerHTML = '<option value="">-- Sélectionner un type --</option>';
+
+                    data.types.forEach(type => {
+                        const option = document.createElement('option');
+                        option.value = type.id;
+                        option.textContent = type.nom;
+                        typeSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                // Fallback : types par défaut
+                const typeSelect = document.getElementById('reparation_type_id');
+                typeSelect.innerHTML = `
+                    <option value="">-- Sélectionner un type --</option>
+                    <option value="1">Freinage</option>
+                    <option value="2">Moteur</option>
+                    <option value="3">Électrique</option>
+                    <option value="4">Carrosserie</option>
+                    <option value="5">Pneumatique</option>
+                    <option value="6">Autre</option>
+                `;
+            });
+    }
+
+    // Gérer le clic sur le bouton "Créer Réparation"
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-creer-reparation')) {
+            const btn = e.target.closest('.btn-creer-reparation');
+            currentDepenseIdForReparation = btn.dataset.depenseId;
+            const montant = btn.dataset.montant;
+            const description = btn.dataset.description;
+
+            // Remplir le formulaire
+            document.getElementById('reparation_depense_id').value = currentDepenseIdForReparation;
+            document.getElementById('reparation_montant').value = montant;
+            document.getElementById('reparation_description').value = description;
+            document.getElementById('reparation_date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('reparation_garage').value = '';
+
+            // Charger les dropdowns
+            chargerVehiculesReparation();
+            chargerTypesReparation();
+
+            // Masquer le message
+            document.getElementById('creerReparationMessage').classList.add('d-none');
+
+            // Ouvrir le modal
+            creerReparationModal.show();
+        }
+    });
+
+    // Enregistrer la réparation
+    document.getElementById('saveReparationBtn').addEventListener('click', function() {
+        const saveBtn = this;
+        const depenseId = document.getElementById('reparation_depense_id').value;
+
+        // Validation
+        const vehiculeId = document.getElementById('reparation_vehicule_id').value;
+        const dateReparation = document.getElementById('reparation_date').value;
+        const typeReparationId = document.getElementById('reparation_type_id').value;
+        const garage = document.getElementById('reparation_garage').value.trim();
+
+        if (!vehiculeId) {
+            showReparationMessage('Veuillez sélectionner un véhicule', 'warning');
+            return;
+        }
+
+        if (!dateReparation) {
+            showReparationMessage('Veuillez saisir la date de réparation', 'warning');
+            return;
+        }
+
+        if (!typeReparationId) {
+            showReparationMessage('Veuillez sélectionner un type de réparation', 'warning');
+            return;
+        }
+
+        if (!garage) {
+            showReparationMessage('Veuillez saisir le garage/prestataire', 'warning');
+            return;
+        }
+
+        // Désactiver le bouton
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Création...';
+
+        // Récupérer le token CSRF
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // Envoyer la requête AJAX
+        fetch(`/voyages/depenses/${depenseId}/creer-reparation/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                vehicule_id: vehiculeId,
+                date_reparation: dateReparation,
+                type_reparation_id: typeReparationId,
+                garage_prestataire: garage,
+                description: document.getElementById('reparation_description').value.trim()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showReparationMessage(data.message, 'success');
+
+                // Recharger la liste des dépenses après 1 seconde
+                setTimeout(() => {
+                    loadDepenses();
+                    creerReparationModal.hide();
+                }, 1000);
+            } else {
+                showReparationMessage(data.error || 'Erreur lors de la création', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showReparationMessage('Erreur de connexion au serveur', 'danger');
+        })
+        .finally(() => {
+            // Réactiver le bouton
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-tools me-2"></i>Créer la Réparation';
+        });
+    });
+
+    // Fonction pour afficher un message dans le modal de réparation
+    function showReparationMessage(message, type) {
+        const messageDiv = document.getElementById('creerReparationMessage');
         messageDiv.className = `alert alert-${type}`;
         messageDiv.textContent = message;
         messageDiv.classList.remove('d-none');

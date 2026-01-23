@@ -36,10 +36,16 @@ class Command(BaseCommand):
                 'ordre': 4
             },
             {
+                'code': 'reparation',
+                'nom': 'Réparation',
+                'description_obligatoire': True,  # Description obligatoire pour "Réparation"
+                'ordre': 5
+            },
+            {
                 'code': 'divers',
                 'nom': 'Divers',
                 'description_obligatoire': True,  # Description obligatoire pour "Divers"
-                'ordre': 5
+                'ordre': 6
             },
         ]
 

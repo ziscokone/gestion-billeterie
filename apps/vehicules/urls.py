@@ -31,4 +31,7 @@ urlpatterns = [
     path('types-reparation/ajouter/', views.TypeReparationCreateView.as_view(), name='type_reparation_create'),
     path('types-reparation/<int:pk>/modifier/', views.TypeReparationUpdateView.as_view(), name='type_reparation_update'),
     path('types-reparation/<int:pk>/supprimer/', views.TypeReparationDeleteView.as_view(), name='type_reparation_delete'),
+
+    # API AJAX
+    path('api/types-reparation/', views.get_types_reparation, name='api_types_reparation'),
 ]

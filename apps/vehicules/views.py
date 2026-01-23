@@ -3,6 +3,8 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db.models import Q, Sum, Count
 from django.shortcuts import get_object_or_404, redirect
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
 from core.mixins import AdminRequiredMixin
 from .models import ModeleVehicule, Vehicule, ReparationVehicule, TypeReparation
@@ -385,3 +387,32 @@ class TypeReparationDeleteView(AdminRequiredMixin, DeleteView):
     def form_valid(self, form):
         messages.success(self.request, 'Type de réparation supprimé avec succès.')
         return super().form_valid(form)
+
+
+
+# ==================== API AJAX ====================
+
+@require_http_methods(["GET"])
+def get_types_reparation(request):
+    """
+    Vue AJAX pour récupérer la liste des types de réparation actifs.
+    Utilisé par le modal de création de réparation depuis une dépense.
+    """
+    try:
+        types = TypeReparation.objects.filter(actif=True).order_by('nom')
+        
+        types_data = [
+            {
+                'id': t.id,
+                'nom': t.nom,
+                'description': t.description or ''
+            }
+            for t in types
+        ]
+        
+        return JsonResponse({
+            'success': True,
+            'types': types_data
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

@@ -357,6 +357,20 @@ class ReparationVehicule(models.Model):
         default='terminee',
         verbose_name="Statut"
     )
+    creee_depuis_guichet = models.BooleanField(
+        default=False,
+        verbose_name="Créée depuis le guichet",
+        help_text="Indique si cette réparation a été créée depuis une dépense de voyage"
+    )
+    voyage_source = models.ForeignKey(
+        'voyages.Voyage',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reparations_generees',
+        verbose_name="Voyage source",
+        help_text="Voyage depuis lequel cette réparation a été créée"
+    )
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
 
@@ -367,3 +381,12 @@ class ReparationVehicule(models.Model):
 
     def __str__(self):
         return f"{self.vehicule.immatriculation} - {self.type_reparation.nom} - {self.date_reparation}"
+
+    def delete(self, *args, **kwargs):
+        """Empêche la suppression si la réparation est liée à une dépense de voyage."""
+        from django.core.exceptions import ValidationError
+        if hasattr(self, 'depense_source') and self.depense_source.exists():
+            raise ValidationError(
+                "Impossible de supprimer cette réparation car elle est liée à une dépense de voyage."
+            )
+        super().delete(*args, **kwargs)

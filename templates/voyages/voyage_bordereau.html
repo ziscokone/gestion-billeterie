@@ -434,6 +434,14 @@
             </div>
             {% if depenses %}
             <table style="width: 100%; border-collapse: collapse;">
+                <thead style="background: #ecf0f1;">
+                    <tr>
+                        <th style="padding: 5px 3px; font-size: 8pt; text-align: left; font-weight: bold;">Type</th>
+                        <th style="padding: 5px 3px; font-size: 8pt; text-align: right; font-weight: bold;">Montant</th>
+                        <th style="padding: 5px 3px; font-size: 8pt; text-align: left; font-weight: bold;">Description</th>
+                        <th style="padding: 5px 3px; font-size: 8pt; text-align: center; font-weight: bold;">Réparation</th>
+                    </tr>
+                </thead>
                 <tbody>
                     {% for depense in depenses %}
                     <tr style="border-bottom: 1px solid #ecf0f1;">
@@ -441,17 +449,26 @@
                         <td style="padding: 5px 3px; font-size: 8pt; text-align: right; font-weight: bold;">
                             {{ depense.montant|format_montant }} FCFA
                         </td>
-                        {% if depense.description %}
                         <td style="padding: 5px 3px; font-size: 7pt; color: #7f8c8d; font-style: italic;">
-                            ({{ depense.description|truncatewords:10 }})
+                            {% if depense.description %}
+                                ({{ depense.description|truncatewords:10 }})
+                            {% else %}
+                                -
+                            {% endif %}
                         </td>
-                        {% endif %}
+                        <td style="padding: 5px 3px; font-size: 7pt; text-align: center;">
+                            {% if depense.reparation %}
+                                <span style="color: #27ae60; font-weight: bold;">🔗 Fiche #{{ depense.reparation.pk }}</span>
+                            {% else %}
+                                <span style="color: #bdc3c7;">-</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot style="background: #fadbd8; border-top: 2px solid #e74c3c;">
                     <tr>
-                        <td style="padding: 6px 3px; font-size: 9pt; font-weight: bold;">TOTAL DÉPENSES</td>
+                        <td colspan="2" style="padding: 6px 3px; font-size: 9pt; font-weight: bold;">TOTAL DÉPENSES</td>
                         <td colspan="2" style="padding: 6px 3px; font-size: 9pt; font-weight: bold; text-align: right; color: #e74c3c;">
                             {{ total_depenses|format_montant }} FCFA
                         </td>

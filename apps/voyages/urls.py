@@ -18,6 +18,7 @@ urlpatterns = [
     # Routes AJAX pour la gestion des dépenses
     path('<int:pk>/depenses/', views.get_voyage_depenses, name='voyage_get_depenses'),
     path('<int:pk>/depenses/add/', views.add_voyage_depenses, name='voyage_add_depenses'),
+    path('depenses/<int:depense_id>/creer-reparation/', views.creer_reparation_depuis_depense, name='depense_creer_reparation'),
     # Routes AJAX pour la gestion de la recette bagages
     path('<int:pk>/bagages/', views.get_voyage_bagages, name='voyage_get_bagages'),
     path('<int:pk>/bagages/save/', views.save_voyage_bagages, name='voyage_save_bagages'),

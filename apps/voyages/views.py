@@ -534,7 +534,9 @@ def get_voyage_depenses(request, pk):
                 'montant': float(d.montant),
                 'description': d.description or '',
                 'guichetier': d.guichetier.nom_complet if d.guichetier else 'Inconnu',
-                'date_creation': d.date_creation.strftime('%d/%m/%Y %H:%M')
+                'date_creation': d.date_creation.strftime('%d/%m/%Y %H:%M'),
+                'reparation_id': d.reparation.id if d.reparation else None,
+                'peut_creer_reparation': d.peut_creer_reparation()
             }
             for d in depenses
         ]
@@ -1068,6 +1070,124 @@ def reporter_billet(request, billet_id):
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': 'Données JSON invalides'}, status=400)
     except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@require_http_methods(["POST"])
+def creer_reparation_depuis_depense(request, depense_id):
+    """
+    Vue AJAX pour créer une réparation depuis une dépense de voyage.
+    Permet au guichetier de créer une fiche de réparation avec des infos minimales.
+    """
+    try:
+        # Récupérer la dépense
+        depense = get_object_or_404(Depense, pk=depense_id)
+        voyage = depense.voyage
+
+        # Vérifier les permissions
+        user = request.user
+        if not user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Non authentifié'}, status=401)
+
+        if not user.has_global_access and user.gare:
+            if voyage.gare != user.gare:
+                return JsonResponse({'success': False, 'error': 'Accès non autorisé'}, status=403)
+
+        # Vérifier que c'est une dépense de type "Réparation"
+        if depense.type_depense.code != 'reparation':
+            return JsonResponse({
+                'success': False,
+                'error': 'Cette dépense n\'est pas de type "Réparation"'
+            }, status=400)
+
+        # Vérifier qu'elle n'a pas déjà une réparation liée
+        if depense.a_reparation_liee():
+            return JsonResponse({
+                'success': False,
+                'error': 'Une réparation a déjà été créée pour cette dépense'
+            }, status=400)
+
+        # Vérifier que le voyage a un véhicule assigné
+        if not voyage.vehicule:
+            return JsonResponse({
+                'success': False,
+                'error': 'Le voyage n\'a pas de véhicule assigné. Impossible de créer une réparation.'
+            }, status=400)
+
+        # Récupérer les données JSON
+        data = json.loads(request.body)
+
+        vehicule_id = data.get('vehicule_id')
+        date_reparation = data.get('date_reparation')
+        type_reparation_id = data.get('type_reparation_id')
+        garage_prestataire = data.get('garage_prestataire', '').strip()
+        description = data.get('description', '').strip()
+
+        # Validation des champs obligatoires
+        if not vehicule_id:
+            return JsonResponse({'success': False, 'error': 'Le véhicule est obligatoire'}, status=400)
+
+        if not date_reparation:
+            return JsonResponse({'success': False, 'error': 'La date de réparation est obligatoire'}, status=400)
+
+        if not type_reparation_id:
+            return JsonResponse({'success': False, 'error': 'Le type de réparation est obligatoire'}, status=400)
+
+        if not garage_prestataire:
+            return JsonResponse({'success': False, 'error': 'Le garage/prestataire est obligatoire'}, status=400)
+
+        # Récupérer le véhicule et le type de réparation
+        from apps.vehicules.models import Vehicule, TypeReparation, ReparationVehicule
+        from datetime import datetime
+
+        try:
+            vehicule = Vehicule.objects.get(pk=vehicule_id, actif=True)
+        except Vehicule.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Véhicule invalide'}, status=400)
+
+        try:
+            type_reparation = TypeReparation.objects.get(pk=type_reparation_id, actif=True)
+        except TypeReparation.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Type de réparation invalide'}, status=400)
+
+        # Convertir la date
+        try:
+            date_reparation_obj = datetime.strptime(date_reparation, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'Format de date invalide'}, status=400)
+
+        # Créer la réparation
+        reparation = ReparationVehicule.objects.create(
+            vehicule=vehicule,
+            date_reparation=date_reparation_obj,
+            type_reparation=type_reparation,
+            description=description or depense.description,
+            garage_prestataire=garage_prestataire,
+            montant=depense.montant,  # Montant de la dépense
+            statut='en_attente',  # Statut automatique
+            creee_depuis_guichet=True,
+            voyage_source=voyage
+        )
+
+        # Lier la réparation à la dépense
+        depense.reparation = reparation
+        depense.save(update_fields=['reparation', 'date_modification'])
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Réparation créée avec succès (Fiche #{reparation.pk})',
+            'reparation_id': reparation.pk,
+            'reparation_numero': f"#{reparation.pk}",
+            'vehicule': vehicule.immatriculation,
+            'type_reparation': type_reparation.nom,
+            'montant': float(reparation.montant)
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Données JSON invalides'}, status=400)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 

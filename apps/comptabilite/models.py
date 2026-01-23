@@ -101,6 +101,15 @@ class Depense(models.Model):
         verbose_name="Saisi par",
         help_text="Guichetier qui a enregistré cette dépense"
     )
+    reparation = models.ForeignKey(
+        'vehicules.ReparationVehicule',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='depense_source',
+        verbose_name="Réparation liée",
+        help_text="Réparation créée depuis cette dépense"
+    )
     date_creation = models.DateTimeField(auto_now_add=True, verbose_name="Date de saisie")
     date_modification = models.DateTimeField(auto_now=True)
 
@@ -125,3 +134,15 @@ class Depense(models.Model):
         """Validation avant sauvegarde."""
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def a_reparation_liee(self):
+        """Vérifie si cette dépense a une réparation associée."""
+        return self.reparation is not None
+
+    def peut_creer_reparation(self):
+        """Vérifie si on peut créer une réparation depuis cette dépense."""
+        return (
+            self.type_depense.code == 'reparation' and
+            not self.a_reparation_liee() and
+            self.voyage.vehicule is not None
+        )
