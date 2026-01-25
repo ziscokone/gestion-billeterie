@@ -341,8 +341,9 @@ class RapportParGareView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Tri
         voyages_query = voyages_query.order_by('date_depart', 'gare__nom', 'ligne__nom', 'numero_depart')
 
-        # Récupérer tous les types de dépenses pour déterminer les colonnes dynamiques
-        types_depenses = TypeDepense.objects.filter(actif=True).order_by('ordre', 'nom')
+        # Récupérer la compagnie (singleton)
+        from apps.compagnie.models import Compagnie
+        compagnie = Compagnie.get_instance()
 
         # Construire les données du rapport
         donnees_rapport = []
@@ -358,20 +359,24 @@ class RapportParGareView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             )['total'] or Decimal('0')
             recette_bagages = voyage.recette_bagages or Decimal('0')
 
-            # Dépenses par type
+            # Dépenses par type - Optimisé : on récupère toutes les dépenses du voyage en une fois
             depenses_par_type = {}
             total_depenses_voyage = Decimal('0')
 
-            for type_dep in types_depenses:
-                montant = voyage.depenses.filter(type_depense=type_dep).aggregate(
-                    total=Sum('montant')
-                )['total'] or Decimal('0')
+            # Récupérer toutes les dépenses du voyage (déjà prefetchées)
+            for depense in voyage.depenses.all():
+                type_nom = depense.type_depense.nom
 
-                if montant > 0:
-                    types_depenses_presents.add(type_dep.nom)
+                # Initialiser le type s'il n'existe pas encore
+                if type_nom not in depenses_par_type:
+                    depenses_par_type[type_nom] = Decimal('0')
 
-                depenses_par_type[type_dep.nom] = montant
-                total_depenses_voyage += montant
+                # Ajouter le montant
+                depenses_par_type[type_nom] += depense.montant
+                total_depenses_voyage += depense.montant
+
+                # Marquer ce type comme présent
+                types_depenses_presents.add(type_nom)
 
             # Bénéfice net
             benefice_net = (recette_billets + recette_bagages) - total_depenses_voyage

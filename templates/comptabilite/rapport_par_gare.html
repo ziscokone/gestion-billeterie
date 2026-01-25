@@ -321,7 +321,7 @@
                                 <td class="montant text-success fw-bold">{{ ligne_data.benefice_net|floatformat:0|intcomma }}</td>
                             {% else %}
                                 {# Colonnes de dépenses dynamiques #}
-                                <td class="montant">{{ ligne_data.depenses|default_if_none:dict|get_item:col|default:0|floatformat:0|intcomma }}</td>
+                                <td class="montant">{{ ligne_data.depenses|get_item:col|floatformat:0|intcomma }}</td>
                             {% endif %}
                         {% endfor %}
                     </tr>
