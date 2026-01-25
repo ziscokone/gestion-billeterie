@@ -443,10 +443,10 @@ class RapportParGareView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return context
 
     def get(self, request, *args, **kwargs):
-        """Gère les exports Excel et PDF."""
+        """Gère l'export PDF."""
         format_export = request.GET.get('export')
 
-        if format_export in ['excel', 'pdf']:
+        if format_export == 'pdf':
             # Récupérer les données
             context = self.get_context_data()
 
@@ -492,13 +492,9 @@ class RapportParGareView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
                 donnees_export.append(row)
 
-            # Export selon le format
-            if format_export == 'excel':
-                from apps.comptabilite.utils import export_rapport_gare_excel
-                return export_rapport_gare_excel(donnees_export, filtres)
-            elif format_export == 'pdf':
-                from apps.comptabilite.utils import export_rapport_gare_pdf
-                return export_rapport_gare_pdf(donnees_export, filtres)
+            # Export PDF
+            from apps.comptabilite.utils import export_rapport_gare_pdf
+            return export_rapport_gare_pdf(donnees_export, filtres)
 
         # Affichage normal
         return super().get(request, *args, **kwargs)

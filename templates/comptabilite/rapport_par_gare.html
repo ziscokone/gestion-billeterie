@@ -47,23 +47,6 @@
         box-shadow: 0 4px 8px rgba(230, 126, 34, 0.3);
     }
 
-    .btn-excel {
-        background-color: #5D8A66;
-        border-color: #5D8A66;
-        color: white;
-        font-weight: 600;
-        padding: 0.6rem 1.2rem;
-        font-size: 0.9rem;
-    }
-
-    .btn-excel:hover {
-        background-color: #4E7557;
-        border-color: #4E7557;
-        color: white;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(93, 138, 102, 0.3);
-    }
-
     .btn-pdf {
         background-color: #C45C5C;
         border-color: #C45C5C;
@@ -294,9 +277,6 @@
                             <i class="bi bi-funnel-fill me-1"></i> Afficher
                         </button>
                         {% if donnees_rapport %}
-                        <button type="submit" name="export" value="excel" class="btn btn-excel">
-                            <i class="bi bi-file-earmark-excel-fill me-1"></i> Excel
-                        </button>
                         <button type="submit" name="export" value="pdf" class="btn btn-pdf">
                             <i class="bi bi-file-earmark-pdf-fill me-1"></i> PDF
                         </button>
