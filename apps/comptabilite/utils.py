@@ -271,7 +271,7 @@ def export_rapport_gare_pdf(donnees, filtres):
     # Ligne de séparation supérieure
     header_line = Table([['']], colWidths=[27*cm])
     header_line.setStyle(TableStyle([
-        ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#2c3e50')),
+        ('LINEBELOW', (0, 0), (-1, 0), 2, colors.black),
         ('TOPPADDING', (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
     ]))
@@ -334,14 +334,14 @@ def export_rapport_gare_pdf(donnees, filtres):
         date_text = f"Du {filtres['date_debut'].strftime('%d/%m/%Y')} au {filtres['date_fin'].strftime('%d/%m/%Y')}"
 
     info_data.append([
-        f"<b>Gare:</b> {filtres['gare_nom']}",
-        f"<b>{date_text}</b>",
-        f"<b>Ligne:</b> {filtres['ligne_nom']}"
+        f"Gare: {filtres['gare_nom']}",
+        f"{date_text}",
+        f"Ligne: {filtres['ligne_nom']}"
     ])
 
     info_table = Table(info_data, colWidths=[9*cm, 9*cm, 9*cm])
     info_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
         ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#2c3e50')),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -365,7 +365,7 @@ def export_rapport_gare_pdf(donnees, filtres):
         for col_name in headers:
             value = ligne_data.get(col_name, 0)
             if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
-                row.append(format_montant(value))
+                row.append(f"{format_montant(value)} FCFA")
             else:
                 row.append(str(value))
         table_data.append(row)
@@ -381,7 +381,7 @@ def export_rapport_gare_pdf(donnees, filtres):
             elif col_name == 'Nb Pass.':
                 total_row.append(str(sum(int(d.get(col_name, 0)) for d in donnees)))
             elif col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
-                total_row.append(format_montant(sum(int(d.get(col_name, 0)) for d in donnees)))
+                total_row.append(f"{format_montant(sum(int(d.get(col_name, 0)) for d in donnees))} FCFA")
             else:
                 total_row.append("")
         table_data.append(total_row)
@@ -415,8 +415,8 @@ def export_rapport_gare_pdf(donnees, filtres):
         ('FONTSIZE', (0, -1), (-1, -1), 8),
 
         # Bordures
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#ddd')),
-        ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.HexColor('#2c3e50')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.black),
 
         # Padding
         ('TOPPADDING', (0, 1), (-1, -1), 3),
@@ -443,11 +443,12 @@ def export_rapport_gare_pdf(donnees, filtres):
     # ========== RÉSUMÉ FINAL ==========
     elements.append(Spacer(1, 0.5*cm))
 
-    # Section avec fond coloré pour le résumé
+    # Section avec fond coloré pour le résumé - Sur une seule ligne
     summary_data = [
-        ['CHARGE GARE (Total Dépenses)', f"{format_montant(filtres['total_charge'])} FCFA"],
-        ['', ''],  # Ligne de séparation
-        ['VERSEMENT (Bénéfice Net)', f"{format_montant(filtres['total_versement'])} FCFA"]
+        [
+            f"CHARGE GARE (Total Dépenses)  |  {format_montant(filtres['total_charge'])} FCFA",
+            f"VERSEMENT (Bénéfice Net)  |  {format_montant(filtres['total_versement'])} FCFA"
+        ]
     ]
 
     summary_table = Table(summary_data, colWidths=[13.5*cm, 13.5*cm])
@@ -455,33 +456,20 @@ def export_rapport_gare_pdf(donnees, filtres):
         # Styles généraux
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 11),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
 
         # Charge Gare (rouge clair)
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#fadbd8')),
+        ('BACKGROUND', (0, 0), (0, 0), colors.HexColor('#fadbd8')),
         ('TEXTCOLOR', (0, 0), (0, 0), colors.HexColor('#2c3e50')),
-        ('TEXTCOLOR', (1, 0), (1, 0), colors.HexColor('#e74c3c')),
         ('ALIGN', (0, 0), (0, 0), 'CENTER'),
-        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
-
-        # Ligne de séparation
-        ('BACKGROUND', (0, 1), (-1, 1), colors.white),
-        ('LINEABOVE', (0, 1), (-1, 1), 0, colors.white),
-        ('LINEBELOW', (0, 1), (-1, 1), 0, colors.white),
-        ('TOPPADDING', (0, 1), (-1, 1), 2),
-        ('BOTTOMPADDING', (0, 1), (-1, 1), 2),
+        ('BOX', (0, 0), (0, 0), 1, colors.HexColor('#e74c3c')),
 
         # Versement (vert clair)
-        ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#d5f4e6')),
-        ('TEXTCOLOR', (0, 2), (0, 2), colors.HexColor('#2c3e50')),
-        ('TEXTCOLOR', (1, 2), (1, 2), colors.HexColor('#27ae60')),
-        ('ALIGN', (0, 2), (0, 2), 'CENTER'),
-        ('ALIGN', (1, 2), (1, 2), 'CENTER'),
-
-        # Bordures
-        ('BOX', (0, 0), (-1, 0), 1, colors.HexColor('#e74c3c')),
-        ('BOX', (0, 2), (-1, 2), 1, colors.HexColor('#27ae60')),
+        ('BACKGROUND', (1, 0), (1, 0), colors.HexColor('#d5f4e6')),
+        ('TEXTCOLOR', (1, 0), (1, 0), colors.HexColor('#2c3e50')),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+        ('BOX', (1, 0), (1, 0), 1, colors.HexColor('#27ae60')),
     ])
     summary_table.setStyle(summary_style)
     elements.append(summary_table)
