@@ -16,3 +16,15 @@ def format_montant(value):
         return "{:,}".format(value).replace(',', ' ')
     except (ValueError, TypeError):
         return value
+
+
+@register.filter(name='get_item')
+def get_item(dictionary, key):
+    """
+    Récupère une valeur dans un dictionnaire à partir d'une clé.
+    Utilisé dans les templates pour accéder à des clés dynamiques.
+    Exemple: {{ mon_dict|get_item:ma_cle }}
+    """
+    if isinstance(dictionary, dict):
+        return dictionary.get(key, 0)
+    return 0
