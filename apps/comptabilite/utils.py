@@ -355,15 +355,17 @@ def export_rapport_gare_pdf(donnees, filtres):
     # ========== TABLEAU PRINCIPAL ==========
     table_data = []
 
-    # En-têtes
-    headers = filtres['colonnes']
+    # En-têtes - Remplacer "Num Départ" par "N° Départ"
+    headers = [h.replace('Num Départ', 'N° Départ') for h in filtres['colonnes']]
     table_data.append(headers)
 
     # Données
     for ligne_data in donnees:
         row = []
         for col_name in headers:
-            value = ligne_data.get(col_name, 0)
+            # Mapper "N° Départ" vers "Num Départ" pour récupérer la bonne valeur
+            data_key = 'Num Départ' if col_name == 'N° Départ' else col_name
+            value = ligne_data.get(data_key, 0)
             if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
                 row.append(f"{format_montant(value)} FCFA")
             else:
@@ -376,21 +378,40 @@ def export_rapport_gare_pdf(donnees, filtres):
         for col_name in headers:
             if col_name in ['Date', 'Gare', 'Ligne']:
                 total_row.append("")
-            elif col_name == 'Num Départ':
+            elif col_name in ['Num Départ', 'N° Départ']:
                 total_row.append("TOTAL")
             elif col_name == 'Nb Pass.':
-                total_row.append(str(sum(int(d.get(col_name, 0)) for d in donnees)))
+                total_row.append(str(sum(int(d.get('Nb Pass.', 0)) for d in donnees)))
             elif col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
-                total_row.append(f"{format_montant(sum(int(d.get(col_name, 0)) for d in donnees))} FCFA")
+                # Mapper "N° Départ" vers "Num Départ" pour les données
+                data_key = 'Num Départ' if col_name == 'N° Départ' else col_name
+                total_row.append(f"{format_montant(sum(int(d.get(data_key, 0)) for d in donnees))} FCFA")
             else:
                 total_row.append("")
         table_data.append(total_row)
 
-    # Créer le tableau avec largeurs de colonnes dynamiques
-    col_count = len(headers)
-    col_width = 27*cm / col_count if col_count > 0 else 2*cm
+    # Créer le tableau avec largeurs de colonnes personnalisées
+    col_widths_map = {
+        'Date': 1.3*cm,
+        'Gare': 2.8*cm,
+        'Ligne': 3.8*cm,
+        'N° Départ': 1.0*cm,
+        'Nb Pass.': 1.0*cm,
+        'Recette Billets': 2.2*cm,
+        'Recette Bagages': 2.2*cm,
+        'Carburant': 2.0*cm,
+        'Frais de route': 2.0*cm,
+        'Ration': 1.8*cm,
+        'Réparation': 2.0*cm,
+        'Divers': 2.0*cm,
+        'Total Dépenses': 2.2*cm,
+        'Bénéfice Net': 2.2*cm,
+    }
 
-    table = Table(table_data, colWidths=[col_width] * col_count)
+    # Appliquer les largeurs selon l'ordre des colonnes
+    col_widths = [col_widths_map.get(col, 2*cm) for col in headers]
+
+    table = Table(table_data, colWidths=col_widths)
 
     # Style du tableau
     table_style = TableStyle([
@@ -434,7 +455,7 @@ def export_rapport_gare_pdf(donnees, filtres):
     for col_idx, col_name in enumerate(headers):
         if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net', 'Nb Pass.'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
             table_style.add('ALIGN', (col_idx, 1), (col_idx, -1), 'RIGHT')
-        if col_name == 'Num Départ':
+        if col_name in ['Num Départ', 'N° Départ']:
             table_style.add('ALIGN', (col_idx, 1), (col_idx, -1), 'CENTER')
 
     table.setStyle(table_style)
