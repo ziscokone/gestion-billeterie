@@ -233,7 +233,7 @@ def export_rapport_gare_excel(donnees, filtres):
 
 def export_rapport_gare_pdf(donnees, filtres):
     """
-    Exporte le rapport par gare en format PDF.
+    Exporte le rapport par gare en format PDF avec un design professionnel.
 
     Args:
         donnees: Liste des lignes de données du rapport
@@ -245,6 +245,13 @@ def export_rapport_gare_pdf(donnees, filtres):
     if not REPORTLAB_AVAILABLE:
         raise ImportError("reportlab n'est pas installé. Installez-le avec: pip install reportlab")
 
+    # Importer la compagnie
+    try:
+        from apps.compagnie.models import Compagnie
+        compagnie = Compagnie.get_instance()
+    except:
+        compagnie = None
+
     # Créer le document
     output = BytesIO()
     doc = SimpleDocTemplate(
@@ -252,43 +259,100 @@ def export_rapport_gare_pdf(donnees, filtres):
         pagesize=landscape(A4),
         rightMargin=1*cm,
         leftMargin=1*cm,
-        topMargin=2*cm,
-        bottomMargin=2*cm
+        topMargin=1*cm,
+        bottomMargin=1*cm
     )
 
     # Conteneur pour les éléments
     elements = []
     styles = getSampleStyleSheet()
 
-    # Style personnalisé pour le titre
+    # ========== EN-TÊTE ==========
+    # Ligne de séparation supérieure
+    header_line = Table([['']], colWidths=[27*cm])
+    header_line.setStyle(TableStyle([
+        ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#2c3e50')),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+    ]))
+    elements.append(header_line)
+    elements.append(Spacer(1, 0.2*cm))
+
+    # Informations de la compagnie
+    if compagnie:
+        company_style = ParagraphStyle(
+            'CompanyStyle',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.HexColor('#2c3e50'),
+            spaceAfter=2
+        )
+        elements.append(Paragraph(f"<b>{compagnie.nom}</b>", company_style))
+
+        if compagnie.adresse or compagnie.telephone:
+            info_style = ParagraphStyle(
+                'InfoStyle',
+                parent=styles['Normal'],
+                fontSize=8,
+                textColor=colors.HexColor('#7f8c8d'),
+                spaceAfter=2
+            )
+            if compagnie.adresse:
+                elements.append(Paragraph(compagnie.adresse, info_style))
+            if compagnie.telephone:
+                elements.append(Paragraph(f"Tél: {compagnie.telephone}", info_style))
+
+    elements.append(Spacer(1, 0.3*cm))
+
+    # ========== TITRE DU DOCUMENT ==========
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=18,
-        textColor=colors.HexColor('#1e3a5f'),
-        spaceAfter=12,
-        alignment=1  # Centre
+        fontSize=16,
+        textColor=colors.HexColor('#34495e'),
+        spaceAfter=8,
+        alignment=1,  # Centre
+        fontName='Helvetica-Bold'
     )
-
-    subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Normal'],
-        fontSize=11,
-        spaceAfter=20,
-        alignment=1
-    )
-
-    # Titre
     elements.append(Paragraph("RAPPORT PAR GARE", title_style))
 
-    # Sous-titre avec filtres
-    if filtres['date_debut'] == filtres['date_fin']:
-        subtitle = f"Gare: {filtres['gare_nom']} | Date: {filtres['date_debut'].strftime('%d/%m/%Y')} | Ligne: {filtres['ligne_nom']}"
-    else:
-        subtitle = f"Gare: {filtres['gare_nom']} | Du {filtres['date_debut'].strftime('%d/%m/%Y')} au {filtres['date_fin'].strftime('%d/%m/%Y')} | Ligne: {filtres['ligne_nom']}"
-    elements.append(Paragraph(subtitle, subtitle_style))
+    # ========== INFORMATIONS DU RAPPORT ==========
+    info_bg = Table([['']], colWidths=[27*cm], rowHeights=[0.8*cm])
+    info_bg_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#ecf0f1')),
+        ('ROUNDEDCORNERS', [3, 3, 3, 3]),
+    ])
+    info_bg.setStyle(info_bg_style)
+    elements.append(info_bg)
+    elements.append(Spacer(1, -0.7*cm))
 
-    # Préparer les données du tableau
+    # Contenu des informations
+    info_data = []
+    if filtres['date_debut'] == filtres['date_fin']:
+        date_text = f"Date: {filtres['date_debut'].strftime('%d/%m/%Y')}"
+    else:
+        date_text = f"Du {filtres['date_debut'].strftime('%d/%m/%Y')} au {filtres['date_fin'].strftime('%d/%m/%Y')}"
+
+    info_data.append([
+        f"<b>Gare:</b> {filtres['gare_nom']}",
+        f"<b>{date_text}</b>",
+        f"<b>Ligne:</b> {filtres['ligne_nom']}"
+    ])
+
+    info_table = Table(info_data, colWidths=[9*cm, 9*cm, 9*cm])
+    info_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#2c3e50')),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    elements.append(info_table)
+    elements.append(Spacer(1, 0.4*cm))
+
+    # ========== TABLEAU PRINCIPAL ==========
     table_data = []
 
     # En-têtes
@@ -322,62 +386,118 @@ def export_rapport_gare_pdf(donnees, filtres):
                 total_row.append("")
         table_data.append(total_row)
 
-    # Créer le tableau
-    table = Table(table_data)
+    # Créer le tableau avec largeurs de colonnes dynamiques
+    col_count = len(headers)
+    col_width = 27*cm / col_count if col_count > 0 else 2*cm
+
+    table = Table(table_data, colWidths=[col_width] * col_count)
 
     # Style du tableau
     table_style = TableStyle([
         # En-tête
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a5f')),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34495e')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 5),
 
-        # Données
+        # Données - lignes paires avec fond gris clair
         ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -2), 8),
+        ('FONTSIZE', (0, 1), (-1, -2), 7),
         ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-
-        # Ligne de total
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#e2e8f0')),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, -1), (-1, -1), 9),
-
-        # Grille
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
 
+        # Ligne de total
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#ecf0f1')),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, -1), (-1, -1), 8),
+
+        # Bordures
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#ddd')),
+        ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.HexColor('#2c3e50')),
+
         # Padding
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 1), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
     ])
+
+    # Alterner les couleurs des lignes
+    for i in range(1, len(table_data) - 1):
+        if i % 2 == 0:
+            table_style.add('BACKGROUND', (0, i), (-1, i), colors.HexColor('#f8f9fa'))
+
+    # Aligner les montants à droite
+    for col_idx, col_name in enumerate(headers):
+        if col_name in ['Recette Billets', 'Recette Bagages', 'Total Dépenses', 'Bénéfice Net', 'Nb Pass.'] or any(x in col_name for x in ['Carburant', 'Frais', 'Ration', 'Réparation', 'Divers']):
+            table_style.add('ALIGN', (col_idx, 1), (col_idx, -1), 'RIGHT')
+        if col_name == 'Num Départ':
+            table_style.add('ALIGN', (col_idx, 1), (col_idx, -1), 'CENTER')
 
     table.setStyle(table_style)
     elements.append(table)
 
-    # Résumé final
+    # ========== RÉSUMÉ FINAL ==========
     elements.append(Spacer(1, 0.5*cm))
 
+    # Section avec fond coloré pour le résumé
     summary_data = [
-        ['CHARGE GARE (Total Dépenses):', f"{format_montant(filtres['total_charge'])} FCFA"],
-        ['VERSEMENT (Bénéfice Net):', f"{format_montant(filtres['total_versement'])} FCFA"]
+        ['CHARGE GARE (Total Dépenses)', f"{format_montant(filtres['total_charge'])} FCFA"],
+        ['', ''],  # Ligne de séparation
+        ['VERSEMENT (Bénéfice Net)', f"{format_montant(filtres['total_versement'])} FCFA"]
     ]
 
-    summary_table = Table(summary_data, colWidths=[8*cm, 5*cm])
+    summary_table = Table(summary_data, colWidths=[13.5*cm, 13.5*cm])
     summary_style = TableStyle([
+        # Styles généraux
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
-        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+
+        # Charge Gare (rouge clair)
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#fadbd8')),
+        ('TEXTCOLOR', (0, 0), (0, 0), colors.HexColor('#2c3e50')),
+        ('TEXTCOLOR', (1, 0), (1, 0), colors.HexColor('#e74c3c')),
+        ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+
+        # Ligne de séparation
+        ('BACKGROUND', (0, 1), (-1, 1), colors.white),
+        ('LINEABOVE', (0, 1), (-1, 1), 0, colors.white),
+        ('LINEBELOW', (0, 1), (-1, 1), 0, colors.white),
+        ('TOPPADDING', (0, 1), (-1, 1), 2),
+        ('BOTTOMPADDING', (0, 1), (-1, 1), 2),
+
+        # Versement (vert clair)
+        ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#d5f4e6')),
+        ('TEXTCOLOR', (0, 2), (0, 2), colors.HexColor('#2c3e50')),
+        ('TEXTCOLOR', (1, 2), (1, 2), colors.HexColor('#27ae60')),
+        ('ALIGN', (0, 2), (0, 2), 'CENTER'),
+        ('ALIGN', (1, 2), (1, 2), 'CENTER'),
+
+        # Bordures
+        ('BOX', (0, 0), (-1, 0), 1, colors.HexColor('#e74c3c')),
+        ('BOX', (0, 2), (-1, 2), 1, colors.HexColor('#27ae60')),
     ])
     summary_table.setStyle(summary_style)
     elements.append(summary_table)
+
+    # ========== PIED DE PAGE ==========
+    elements.append(Spacer(1, 0.5*cm))
+
+    footer_style = ParagraphStyle(
+        'FooterStyle',
+        parent=styles['Normal'],
+        fontSize=7,
+        textColor=colors.HexColor('#7f8c8d'),
+        alignment=1
+    )
+    footer_text = f"Document généré le {timezone.now().strftime('%d/%m/%Y à %H:%M')}"
+    elements.append(Paragraph(footer_text, footer_style))
 
     # Générer le PDF
     doc.build(elements)
