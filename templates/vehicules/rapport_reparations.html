@@ -125,11 +125,28 @@
             </div>
             {% endif %}
 
-            <!-- Répartition par type de réparation -->
+            <!-- Graphiques par type de réparation -->
             {% if types_stats %}
             <div class="card mb-4">
                 <div class="card-header" style="background-color: var(--color-accent);">
-                    <h5 class="mb-0 text-white"><i class="bi bi-pie-chart me-2"></i>Répartition par type de réparation</h5>
+                    <h5 class="mb-0 text-white"><i class="bi bi-bar-chart-fill me-2"></i>Analyse graphique par type de réparation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-7 mb-3">
+                            <canvas id="barChartTypes" height="300"></canvas>
+                        </div>
+                        <div class="col-lg-5 mb-3">
+                            <canvas id="doughnutChartTypes" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail par type de réparation -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 text-secondary"><i class="bi bi-list-ul me-2"></i>Détail par type de réparation</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -160,4 +177,117 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typesData = JSON.parse('{{ types_stats_json|escapejs }}');
+    if (!typesData || typesData.length === 0) return;
+
+    const labels = typesData.map(t => t.label);
+    const montants = typesData.map(t => t.cout);
+    const pourcentages = typesData.map(t => t.pourcentage);
+
+    const couleurs = [
+        '#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0',
+        '#6f42c1', '#fd7e14', '#20c997', '#6610f2', '#d63384',
+        '#495057', '#0b5ed7', '#157347', '#e2a100', '#bb2d3b'
+    ];
+
+    // Bar Chart - Montants par type
+    new Chart(document.getElementById('barChartTypes'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Montant (F CFA)',
+                data: montants,
+                backgroundColor: couleurs.slice(0, labels.length),
+                borderColor: couleurs.slice(0, labels.length),
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Coût par type de réparation',
+                    font: { size: 14, weight: 'bold' }
+                },
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.parsed.y.toLocaleString('fr-FR') + ' F CFA';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('fr-FR') + ' F';
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Montant (F CFA)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Type de réparation'
+                    }
+                }
+            }
+        }
+    });
+
+    // Doughnut Chart - Répartition en pourcentage
+    new Chart(document.getElementById('doughnutChartTypes'), {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: pourcentages,
+                backgroundColor: couleurs.slice(0, labels.length),
+                borderWidth: 2,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Répartition en pourcentage',
+                    font: { size: 14, weight: 'bold' }
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: { padding: 12 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const idx = ctx.dataIndex;
+                            const montant = montants[idx].toLocaleString('fr-FR');
+                            return ctx.label + ': ' + ctx.parsed.toFixed(1) + '% (' + montant + ' F)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

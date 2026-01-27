@@ -5,6 +5,7 @@ from django.db.models import Q, Sum, Count
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+import json
 from datetime import datetime, timedelta
 from core.mixins import AdminRequiredMixin
 from .models import ModeleVehicule, Vehicule, ReparationVehicule, TypeReparation
@@ -324,6 +325,10 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
                 })
 
         context['types_stats'] = types_stats
+        context['types_stats_json'] = json.dumps([
+            {'label': t['label'], 'cout': float(t['cout']), 'pourcentage': round(t['pourcentage'], 1)}
+            for t in types_stats
+        ])
 
         # Véhicules critiques (> 2M)
         context['vehicules_critiques'] = [v for v in vehicules_stats if v['niveau_alerte'] == 'critique']
