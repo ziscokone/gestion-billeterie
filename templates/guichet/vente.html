@@ -491,16 +491,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Générer les QR Codes après insertion du HTML
         billets.forEach((billet, index) => {
-            const qrContainer = document.getElementById(`qr-ticket-${index}`);
-            if (qrContainer && billet.qr_data) {
-                new QRCode(qrContainer, {
-                    text: billet.qr_data,
-                    width: 94,
-                    height: 94,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
+            try {
+                const qrContainer = document.getElementById(`qr-ticket-${index}`);
+                if (qrContainer && billet.qr_data && typeof QRCode !== 'undefined') {
+                    new QRCode(qrContainer, {
+                        text: billet.qr_data,
+                        width: 94,
+                        height: 94,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                }
+            } catch (e) {
+                console.warn('QR Code generation failed:', e);
             }
         });
     }
@@ -542,16 +546,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Générer les QR Codes après insertion du HTML
         billets.forEach((billet, index) => {
-            const qrContainer = document.getElementById(`qr-modal-${index}`);
-            if (qrContainer && billet.qr_data) {
-                new QRCode(qrContainer, {
-                    text: billet.qr_data,
-                    width: 94,
-                    height: 94,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
+            try {
+                const qrContainer = document.getElementById(`qr-modal-${index}`);
+                if (qrContainer && billet.qr_data && typeof QRCode !== 'undefined') {
+                    new QRCode(qrContainer, {
+                        text: billet.qr_data,
+                        width: 94,
+                        height: 94,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                }
+            } catch (e) {
+                console.warn('QR Code generation failed:', e);
             }
         });
     }
