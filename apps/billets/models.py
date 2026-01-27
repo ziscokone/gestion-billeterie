@@ -1,4 +1,3 @@
-import json
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -190,19 +189,8 @@ class Billet(models.Model):
             # Informations de la compagnie
             'compagnie_nom': compagnie.nom if compagnie else '',
             'compagnie_logo': compagnie.logo.url if compagnie and compagnie.logo else '',
-            # Données pour le QR Code
-            'qr_data': json.dumps({
-                'ticket': self.numero,
-                'gare': gare.nom if gare else '',
-                'ligne': str(self.voyage.ligne),
-                'destination': self.destination.ville_arrivee if self.destination else '',
-                'date': self.voyage.date_depart.strftime('%d/%m/%Y'),
-                'heure': self.voyage.heure_depart.strftime('%H:%M'),
-                'periode': self.voyage.get_periode_display(),
-                'client': self.client_nom,
-                'montant': str(self.montant),
-                'siege': self.numero_siege,
-            }, ensure_ascii=False),
+            # Données pour le QR Code (format compact pour respecter la limite QR)
+            'qr_data': f"{self.numero}|{gare.nom if gare else ''}|{self.voyage.ligne}|{self.destination.ville_arrivee if self.destination else ''}|{self.voyage.date_depart.strftime('%d/%m/%Y')}|{self.voyage.heure_depart.strftime('%H:%M')}|{self.client_nom}|{self.montant}|S{self.numero_siege}",
         }
 
     @classmethod
