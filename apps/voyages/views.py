@@ -371,9 +371,12 @@ def get_voyage_agents(request, pk):
         capacite_minimale = max_siege if max_siege else 0
 
         # Récupérer tous les véhicules actifs avec capacité suffisante
+        # Exclure les véhicules en réparation (statut en_attente ou en_cours)
         vehicules = Vehicule.objects.filter(
             actif=True,
             modele__capacite__gte=capacite_minimale
+        ).exclude(
+            reparations__statut__in=['en_attente', 'en_cours']
         ).select_related('modele', 'compagnie').order_by('immatriculation')
 
         vehicules_data = [
@@ -449,6 +452,14 @@ def save_voyage_agents(request, pk):
         if vehicule_id:
             # Vérifier que le véhicule existe et est actif
             vehicule = get_object_or_404(Vehicule, pk=vehicule_id, actif=True)
+
+            # Vérification : véhicule pas en réparation
+            if vehicule.est_en_reparation:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Le véhicule {vehicule.immatriculation} est actuellement en réparation '
+                             f'et ne peut pas être assigné à un voyage.'
+                }, status=400)
 
             # Vérification supplémentaire : capacité suffisante
             max_siege = voyage.billets.aggregate(max_siege=Max('numero_siege'))['max_siege']

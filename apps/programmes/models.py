@@ -115,6 +115,16 @@ class ProgrammeDepart(models.Model):
             if not self.est_actif_jour(jour_semaine):
                 continue
 
+            # Vérifier si le numéro de départ existe déjà pour cette gare et date
+            numero_depart_existe = Voyage.objects.filter(
+                gare=self.gare,
+                date_depart=date_voyage,
+                numero_depart=self.numero_depart
+            ).exists()
+
+            if numero_depart_existe:
+                continue
+
             # Vérifier si le voyage existe déjà (éviter les doublons)
             voyage_existe = Voyage.objects.filter(
                 gare=self.gare,
@@ -128,6 +138,11 @@ class ProgrammeDepart(models.Model):
             if voyage_existe:
                 continue
 
+            # Assigner le véhicule uniquement s'il n'est pas en réparation
+            vehicule = self.vehicule_defaut
+            if vehicule and vehicule.est_en_reparation:
+                vehicule = None
+
             # Créer le voyage
             voyage = Voyage.objects.create(
                 gare=self.gare,
@@ -136,7 +151,7 @@ class ProgrammeDepart(models.Model):
                 heure_depart=self.heure_depart,
                 periode=self.periode,
                 numero_depart=self.numero_depart,
-                vehicule=self.vehicule_defaut,
+                vehicule=vehicule,
                 cree_automatiquement=True,
                 programme=self
             )

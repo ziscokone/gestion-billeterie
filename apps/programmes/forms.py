@@ -2,6 +2,7 @@ from django import forms
 from .models import ProgrammeDepart
 from apps.gares.models import Gare
 from apps.lignes.models import Ligne
+from apps.vehicules.models import Vehicule
 
 
 class ProgrammeDepartForm(forms.ModelForm):
@@ -19,6 +20,13 @@ class ProgrammeDepartForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+
+        # Exclure les véhicules en réparation (en_attente ou en_cours)
+        self.fields['vehicule_defaut'].queryset = Vehicule.objects.filter(
+            actif=True
+        ).exclude(
+            reparations__statut__in=['en_attente', 'en_cours']
+        )
 
         # Filtrer les gares pour les utilisateurs non-global
         if self.user and not self.user.has_global_access:

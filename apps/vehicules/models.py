@@ -277,6 +277,13 @@ class Vehicule(models.Model):
         """Retourne la dernière réparation effectuée."""
         return self.reparations.order_by('-date_reparation').first()
 
+    @property
+    def est_en_reparation(self):
+        """Vérifie si le véhicule a une réparation en attente ou en cours."""
+        return self.reparations.filter(
+            statut__in=['en_attente', 'en_cours']
+        ).exists()
+
     def is_critique(self, seuil=2000000):
         """Vérifie si le véhicule a dépassé le seuil critique de coûts."""
         return self.get_cout_total_reparations() > seuil

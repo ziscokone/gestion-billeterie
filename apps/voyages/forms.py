@@ -2,6 +2,7 @@ from django import forms
 from .models import Voyage
 from apps.gares.models import Gare
 from apps.lignes.models import Ligne
+from apps.vehicules.models import Vehicule
 
 
 class VoyageForm(forms.ModelForm):
@@ -10,6 +11,13 @@ class VoyageForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+
+        # Exclure les véhicules en réparation (en_attente ou en_cours)
+        self.fields['vehicule'].queryset = Vehicule.objects.filter(
+            actif=True
+        ).exclude(
+            reparations__statut__in=['en_attente', 'en_cours']
+        )
 
         # Filtrer les gares et lignes pour les utilisateurs non-global
         if self.user and not self.user.has_global_access:
@@ -101,6 +109,24 @@ class VoyageForm(forms.ModelForm):
             if ligne.gare and ligne.gare != gare:
                 raise forms.ValidationError(
                     'La ligne sélectionnée n\'appartient pas à cette gare.'
+                )
+
+        # Vérifier l'unicité du numéro de départ par gare et date
+        if gare and date_depart and numero_depart:
+            numero_existant = Voyage.objects.filter(
+                gare=gare,
+                date_depart=date_depart,
+                numero_depart=numero_depart
+            )
+
+            if self.instance and self.instance.pk:
+                numero_existant = numero_existant.exclude(pk=self.instance.pk)
+
+            if numero_existant.exists():
+                raise forms.ValidationError(
+                    f'Le numéro de départ N°{numero_depart} existe déjà pour la gare {gare} '
+                    f'à la date du {date_depart.strftime("%d/%m/%Y")}. '
+                    f'Veuillez choisir un autre numéro de départ.'
                 )
 
         # Vérifier l'unicité du voyage (éviter les doublons)

@@ -629,6 +629,21 @@ a:hover {
     font-weight: bold;
 }
 
+/* Style pour le QR Code sur les tickets */
+.ticket-preview .ticket-qrcode {
+    display: flex;
+    justify-content: center;
+    padding: 3mm 0;
+}
+
+.ticket-preview .ticket-qrcode img,
+.ticket-preview .ticket-qrcode canvas {
+    display: block;
+    margin: 0 auto;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
 /* Style pour le ticket DUPLICATA */
 .ticket-preview.ticket-duplicata {
     position: relative !important;

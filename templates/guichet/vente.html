@@ -456,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Affichage des tickets dans le container caché (pour impression)
     function displayTickets(billets) {
         const container = document.getElementById('ticketsContainer');
-        container.innerHTML = billets.map(billet => `
+        container.innerHTML = billets.map((billet, index) => `
             <div class="ticket-preview mb-3">
                 <div class="ticket-header-row">
                     <div class="ticket-logo">
@@ -481,18 +481,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="ticket-row"><span>Destination:</span><strong>${billet.destination || 'N/A'}</strong></div>
                     <div class="ticket-row"><span>Date:</span><span>${billet.date_depart}</span></div>
                     <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
+                    <div class="ticket-qrcode" id="qr-ticket-${index}"></div>
                     <hr>
                     <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
                     <div class="ticket-row"><span>Paiement:</span><strong>${billet.moyen_paiement_display || 'Cash'}</strong></div>
                 </div>
             </div>
         `).join('');
+
+        // Générer les QR Codes après insertion du HTML
+        billets.forEach((billet, index) => {
+            const qrContainer = document.getElementById(`qr-ticket-${index}`);
+            if (qrContainer && billet.qr_data) {
+                new QRCode(qrContainer, {
+                    text: billet.qr_data,
+                    width: 94,
+                    height: 94,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        });
     }
 
     // Affichage des tickets dans le modal (pour réservations)
     function displayTicketsInModal(billets) {
         const container = document.getElementById('ticketsContainerModal');
-        container.innerHTML = billets.map(billet => `
+        container.innerHTML = billets.map((billet, index) => `
             <div class="ticket-preview mb-3">
                 <div class="ticket-header-row">
                     <div class="ticket-logo">
@@ -517,11 +533,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="ticket-row"><span>Destination:</span><strong>${billet.destination || 'N/A'}</strong></div>
                     <div class="ticket-row"><span>Date:</span><span>${billet.date_depart}</span></div>
                     <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
+                    <div class="ticket-qrcode" id="qr-modal-${index}"></div>
                     <hr>
                     <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
                 </div>
             </div>
         `).join('');
+
+        // Générer les QR Codes après insertion du HTML
+        billets.forEach((billet, index) => {
+            const qrContainer = document.getElementById(`qr-modal-${index}`);
+            if (qrContainer && billet.qr_data) {
+                new QRCode(qrContainer, {
+                    text: billet.qr_data,
+                    width: 94,
+                    height: 94,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        });
     }
 
     // Rafraîchir les sièges
