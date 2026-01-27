@@ -189,8 +189,6 @@ class Billet(models.Model):
             # Informations de la compagnie
             'compagnie_nom': compagnie.nom if compagnie else '',
             'compagnie_logo': compagnie.logo.url if compagnie and compagnie.logo else '',
-            # Données pour le QR Code (format compact pour respecter la limite QR)
-            'qr_data': f"{self.numero}|{gare.nom if gare else ''}|{self.voyage.ligne}|{self.destination.ville_arrivee if self.destination else ''}|{self.voyage.date_depart.strftime('%d/%m/%Y')}|{self.voyage.heure_depart.strftime('%H:%M')}|{self.client_nom}|{self.montant}|S{self.numero_siege}",
         }
 
     @classmethod

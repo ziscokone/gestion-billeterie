@@ -742,7 +742,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="ticket-row"><span>Destination:</span><strong>${billet.destination || 'N/A'}</strong></div>
                         <div class="ticket-row"><span>Date:</span><span>${billet.date_depart}</span></div>
                         <div class="ticket-row"><span>Heure:</span><span>${billet.heure_depart}</span></div>
-                        <div class="ticket-qrcode" id="qr-duplicata"></div>
                         <hr>
                         <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
                         <div class="ticket-row"><span>Paiement:</span><strong>${billet.moyen_paiement_display || 'Cash'}</strong></div>
@@ -750,23 +749,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-
-        // Générer le QR Code pour le duplicata
-        try {
-            const qrContainer = document.getElementById('qr-duplicata');
-            if (qrContainer && billet.qr_data && typeof QRCode !== 'undefined') {
-                new QRCode(qrContainer, {
-                    text: billet.qr_data,
-                    width: 94,
-                    height: 94,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.L
-                });
-            }
-        } catch (e) {
-            console.warn('QR Code generation failed:', e);
-        }
     }
 
     // Gestionnaire de clic sur les boutons de réimpression

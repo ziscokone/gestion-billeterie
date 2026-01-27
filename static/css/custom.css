@@ -24,7 +24,7 @@
     /* Couleurs des sièges */
     --color-siege-disponible: #D4EDDA;
     --color-siege-reserve: #FFF3CD;
-    --color-siege-paye: #ADB5BD;
+    --color-siege-paye: #FF6600;
     --color-siege-non-vendable: #6C757D;
 
     /* Bordures et ombres */
@@ -627,21 +627,6 @@ a:hover {
 
 .ticket-preview .ticket-montant strong {
     font-weight: bold;
-}
-
-/* Style pour le QR Code sur les tickets */
-.ticket-preview .ticket-qrcode {
-    display: flex;
-    justify-content: center;
-    padding: 3mm 0;
-}
-
-.ticket-preview .ticket-qrcode img,
-.ticket-preview .ticket-qrcode canvas {
-    display: block;
-    margin: 0 auto;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
 }
 
 /* Style pour le ticket DUPLICATA */
