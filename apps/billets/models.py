@@ -189,6 +189,8 @@ class Billet(models.Model):
             # Informations de la compagnie
             'compagnie_nom': compagnie.nom if compagnie else '',
             'compagnie_logo': compagnie.logo.url if compagnie and compagnie.logo else '',
+            'utiliser_souche': compagnie.utiliser_souche if compagnie else False,
+            'statut': self.statut,
         }
 
     @classmethod

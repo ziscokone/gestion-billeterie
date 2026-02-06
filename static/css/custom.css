@@ -660,6 +660,61 @@ a:hover {
     text-align: center;
 }
 
+/* ==========================================================================
+   Styles pour la SOUCHE
+   ========================================================================== */
+
+/* Ligne de découpe avec pointillés */
+.ticket-separator-cut {
+    text-align: center;
+    padding: 3mm 0;
+    border-top: 2px dashed #999;
+    color: #999;
+    font-size: 7pt;
+    letter-spacing: 2px;
+    margin: 2mm 0;
+}
+
+/* Conteneur de la souche */
+.ticket-souche {
+    position: relative;
+    padding: 3mm;
+    min-height: 30mm;
+    background-color: #fafafa;
+    border-top: 1px solid #ccc;
+}
+
+/* En-tête de la souche */
+.ticket-souche .souche-header {
+    text-align: center;
+    font-weight: bold;
+    font-size: 8pt;
+    margin-bottom: 2mm;
+    text-transform: uppercase;
+    border-bottom: 1px solid #999;
+    padding-bottom: 1mm;
+}
+
+/* Filigrane SOUCHE (discret) */
+.ticket-souche .souche-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-25deg);
+    font-size: 22px;
+    font-weight: 900;
+    color: rgba(100, 100, 100, 0.08);
+    pointer-events: none;
+    z-index: 0;
+    letter-spacing: 3px;
+}
+
+/* Contenu de la souche au-dessus du filigrane */
+.ticket-souche .ticket-row {
+    position: relative;
+    z-index: 1;
+}
+
 @media print {
     @page {
         size: 80mm auto;
@@ -716,6 +771,25 @@ a:hover {
     .ticket-preview.ticket-duplicata .ticket-content {
         width: 100% !important;
         box-sizing: border-box !important;
+    }
+
+    /* Styles d'impression pour la souche */
+    .ticket-separator-cut {
+        border-top: 2px dashed #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .ticket-souche {
+        background-color: #fafafa !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .ticket-souche .souche-watermark {
+        color: rgba(100, 100, 100, 0.12) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
     .no-print {

@@ -456,7 +456,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Affichage des tickets dans le container caché (pour impression)
     function displayTickets(billets) {
         const container = document.getElementById('ticketsContainer');
-        container.innerHTML = billets.map(billet => `
+        container.innerHTML = billets.map(billet => {
+            let html = `
             <div class="ticket-preview mb-3">
                 <div class="ticket-header-row">
                     <div class="ticket-logo">
@@ -485,14 +486,52 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
                     <div class="ticket-row"><span>Paiement:</span><strong>${billet.moyen_paiement_display || 'Cash'}</strong></div>
                 </div>
-            </div>
-        `).join('');
+            `;
+
+            // Ajouter la souche si activé ET billet payé
+            if (billet.utiliser_souche && billet.statut === 'paye') {
+                html += `
+                <!-- LIGNE DE DÉCOUPE -->
+                <div class="ticket-separator-cut">✂ - - - - - - - - - - - - - - - - - - - - - - ✂</div>
+
+                <!-- SOUCHE COMPAGNIE -->
+                <div class="ticket-souche">
+                    <div class="souche-watermark">SOUCHE</div>
+                    <div class="souche-header">SOUCHE</div>
+                    <div class="ticket-row">
+                        <span>N° Depart:</span>
+                        <strong>${billet.numero_depart || 'N/A'}</strong>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Siege:</span>
+                        <strong class="ticket-siege">${billet.numero_siege}</strong>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Ligne:</span>
+                        <span>${billet.ligne}</span>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Date:</span>
+                        <span>${billet.date_depart}</span>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Heure:</span>
+                        <span>${billet.heure_depart}</span>
+                    </div>
+                </div>
+                `;
+            }
+
+            html += `</div>`;
+            return html;
+        }).join('');
     }
 
     // Affichage des tickets dans le modal (pour réservations)
     function displayTicketsInModal(billets) {
         const container = document.getElementById('ticketsContainerModal');
-        container.innerHTML = billets.map(billet => `
+        container.innerHTML = billets.map(billet => {
+            let html = `
             <div class="ticket-preview mb-3">
                 <div class="ticket-header-row">
                     <div class="ticket-logo">
@@ -520,8 +559,45 @@ document.addEventListener('DOMContentLoaded', function() {
                     <hr>
                     <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
                 </div>
-            </div>
-        `).join('');
+            `;
+
+            // Ajouter la souche si activé ET billet payé
+            if (billet.utiliser_souche && billet.statut === 'paye') {
+                html += `
+                <!-- LIGNE DE DÉCOUPE -->
+                <div class="ticket-separator-cut">✂ - - - - - - - - - - - - - - - - - - - - - - ✂</div>
+
+                <!-- SOUCHE COMPAGNIE -->
+                <div class="ticket-souche">
+                    <div class="souche-watermark">SOUCHE</div>
+                    <div class="souche-header">SOUCHE</div>
+                    <div class="ticket-row">
+                        <span>N° Depart:</span>
+                        <strong>${billet.numero_depart || 'N/A'}</strong>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Siege:</span>
+                        <strong class="ticket-siege">${billet.numero_siege}</strong>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Ligne:</span>
+                        <span>${billet.ligne}</span>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Date:</span>
+                        <span>${billet.date_depart}</span>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Heure:</span>
+                        <span>${billet.heure_depart}</span>
+                    </div>
+                </div>
+                `;
+            }
+
+            html += `</div>`;
+            return html;
+        }).join('');
     }
 
     // Rafraîchir les sièges

@@ -17,6 +17,11 @@ class Compagnie(models.Model):
     adresse = models.TextField(blank=True, verbose_name="Adresse")
     telephone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone")
     email = models.EmailField(blank=True, verbose_name="Email")
+    utiliser_souche = models.BooleanField(
+        default=False,
+        verbose_name="Imprimer avec souche",
+        help_text="Si activé, chaque ticket payé sera imprimé avec une souche détachable pour la compagnie"
+    )
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
 

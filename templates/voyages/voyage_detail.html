@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fonction pour afficher le ticket duplicata
     function displayDuplicata(billet) {
-        duplicataContainer.innerHTML = `
+        let html = `
             <div class="ticket-preview ticket-duplicata mb-3">
                 <div class="duplicata-watermark">DUPLICATA</div>
                 <div class="ticket-content">
@@ -746,9 +746,48 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="ticket-row ticket-montant"><span>Montant:</span><strong>${Number(billet.montant).toLocaleString('fr-FR')} FCFA</strong></div>
                         <div class="ticket-row"><span>Paiement:</span><strong>${billet.moyen_paiement_display || 'Cash'}</strong></div>
                     </div>
+        `;
+
+        // Ajouter la souche sur le duplicata si activé
+        if (billet.utiliser_souche) {
+            html += `
+                    <!-- LIGNE DE DÉCOUPE -->
+                    <div class="ticket-separator-cut">✂ - - - - - - - - - - - - - - - - - - - - - - ✂</div>
+
+                    <!-- SOUCHE COMPAGNIE -->
+                    <div class="ticket-souche">
+                        <div class="souche-watermark">SOUCHE</div>
+                        <div class="souche-header">SOUCHE</div>
+                        <div class="ticket-row">
+                            <span>N° Depart:</span>
+                            <strong>${billet.numero_depart || 'N/A'}</strong>
+                        </div>
+                        <div class="ticket-row">
+                            <span>Siege:</span>
+                            <strong class="ticket-siege">${billet.numero_siege}</strong>
+                        </div>
+                        <div class="ticket-row">
+                            <span>Ligne:</span>
+                            <span>${billet.ligne}</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>Date:</span>
+                            <span>${billet.date_depart}</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>Heure:</span>
+                            <span>${billet.heure_depart}</span>
+                        </div>
+                    </div>
+            `;
+        }
+
+        html += `
                 </div>
             </div>
         `;
+
+        duplicataContainer.innerHTML = html;
     }
 
     // Gestionnaire de clic sur les boutons de réimpression
