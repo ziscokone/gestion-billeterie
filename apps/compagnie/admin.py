@@ -12,6 +12,10 @@ class CompagnieAdmin(admin.ModelAdmin):
         ('Contact', {
             'fields': ('adresse', 'telephone', 'email')
         }),
+        ('Configuration', {
+            'fields': ('utiliser_souche',),
+            'description': 'Paramètres d\'impression des billets'
+        }),
     )
 
     def has_add_permission(self, request):
