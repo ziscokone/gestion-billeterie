@@ -337,6 +337,16 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
             # Véhicules critiques (> 2M)
             context['vehicules_critiques'] = [v for v in vehicules_stats if v['niveau_alerte'] == 'critique']
 
+            # JSON pour le graphique véhicules
+            context['vehicules_stats_json'] = json.dumps([
+                {
+                    'label': v['vehicule'].immatriculation,
+                    'cout': float(v['cout_total']),
+                    'niveau': v['niveau_alerte']
+                }
+                for v in vehicules_stats[:10]
+            ])
+
         except Exception as e:
             logger.error(f"Erreur dans RapportReparationsView: {e}", exc_info=True)
             context.setdefault('date_debut', datetime.now().strftime('%Y-%m-%d'))
@@ -347,6 +357,7 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
             context.setdefault('vehicules_stats', [])
             context.setdefault('types_stats', [])
             context.setdefault('types_stats_json', '[]')
+            context.setdefault('vehicules_stats_json', '[]')
             context.setdefault('vehicules_critiques', [])
 
         return context

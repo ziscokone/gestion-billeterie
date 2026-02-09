@@ -15,7 +15,7 @@
         <div class="card-body">
             <!-- Filtres de période -->
             <div class="card mb-4 border-primary">
-                <div class="card-header text-white">
+                <div class="card-header text-white" style="background-color: var(--color-accent);">
                     <h6 class="mb-0"><i class="bi bi-calendar-range me-2"></i>Période d'analyse</h6>
                 </div>
                 <div class="card-body">
@@ -34,7 +34,7 @@
                             </button>
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
-                            <a href="{% url 'vehicules:reparation_list' %}" class="btn btn-danger text-white w-100">
+                            <a href="{% url 'vehicules:reparation_list' %}" class="btn btn-outline-secondary w-100">
                                 <i class="bi bi-arrow-left me-1"></i> Retour aux réparations
                             </a>
                         </div>
@@ -43,36 +43,36 @@
             </div>
 
             <!-- Statistiques globales -->
-            <div class="card mb-4 border-primary">
-                <div class="card-header bg-primary bg-opacity-10">
-                    <h5 class="mb-0 text-primary"><i class="bi bi-graph-up me-2"></i>Statistiques globales</h5>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Statistiques globales</h5>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
                         <div class="col-md-4 mb-3">
-                            <div class="card bg-primary bg-opacity-10 border-primary">
-                                <div class="card-body">
-                                    <i class="bi bi-currency-exchange text-primary" style="font-size: 3rem;"></i>
-                                    <h2 class="mt-2 mb-0 text-primary">{{ cout_total|floatformat:0|intcomma }} F</h2>
-                                    <p class="text-muted mb-0">Coût total</p>
+                            <div class="stat-card">
+                                <div class="stat-value" style="font-size: 1.5rem;">{{ cout_total|floatformat:0|intcomma }} F</div>
+                                <div class="stat-label">
+                                    <i class="bi bi-currency-exchange me-1"></i>
+                                    Coût total
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <div class="card bg-warning bg-opacity-10 border-warning">
-                                <div class="card-body">
-                                    <i class="bi bi-tools text-warning" style="font-size: 3rem;"></i>
-                                    <h2 class="mt-2 mb-0 text-warning">{{ nb_reparations }}</h2>
-                                    <p class="text-muted mb-0">Réparations</p>
+                            <div class="stat-card">
+                                <div class="stat-value">{{ nb_reparations }}</div>
+                                <div class="stat-label">
+                                    <i class="bi bi-tools me-1"></i>
+                                    Réparations
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <div class="card bg-info bg-opacity-10 border-info">
-                                <div class="card-body">
-                                    <i class="bi bi-bus-front text-info" style="font-size: 3rem;"></i>
-                                    <h2 class="mt-2 mb-0 text-info">{{ nb_vehicules }}</h2>
-                                    <p class="text-muted mb-0">Véhicules concernés</p>
+                            <div class="stat-card">
+                                <div class="stat-value">{{ nb_vehicules }}</div>
+                                <div class="stat-label">
+                                    <i class="bi bi-bus-front me-1"></i>
+                                    Véhicules concernés
                                 </div>
                             </div>
                         </div>
@@ -83,13 +83,13 @@
             <!-- Tableau comparatif par véhicule -->
             {% if vehicules_stats %}
             <div class="card mb-4">
-                <div class="card-header bg-info bg-opacity-10">
-                    <h5 class="mb-0 text-info"><i class="bi bi-table me-2"></i>Tableau comparatif par véhicule</h5>
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-table me-2"></i>Comparatif par véhicule</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead>
                                 <tr>
                                     <th>Véhicule</th>
                                     <th>Modèle</th>
@@ -108,12 +108,12 @@
                                         <span class="badge bg-secondary">{{ vehicule_stat.nb_reparations }}</span>
                                     </td>
                                     <td class="text-end">
-                                        <strong class="text-primary">{{ vehicule_stat.cout_total|floatformat:0|intcomma }} F</strong>
+                                        <strong>{{ vehicule_stat.cout_total|floatformat:0|intcomma }} F</strong>
                                     </td>
                                     <td class="text-end">{{ vehicule_stat.cout_moyen|floatformat:0|intcomma }} F</td>
                                     <td class="text-center">
                                         <a href="{% url 'vehicules:vehicule_update' vehicule_stat.vehicule.pk %}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i> Détails
+                                            <i class="bi bi-eye"></i>
                                         </a>
                                     </td>
                                 </tr>
@@ -125,11 +125,28 @@
             </div>
             {% endif %}
 
-            <!-- Répartition par type de réparation -->
+            <!-- Graphiques par type de réparation -->
             {% if types_stats %}
             <div class="card mb-4">
-                <div class="card-header" style="background-color: var(--color-accent);">
-                    <h5 class="mb-0 text-white"><i class="bi bi-pie-chart me-2"></i>Répartition par type de réparation</h5>
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Analyse par type de réparation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-7 mb-3">
+                            <canvas id="barChartTypes" height="300"></canvas>
+                        </div>
+                        <div class="col-lg-5 mb-3">
+                            <canvas id="doughnutChartTypes" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail chiffré par type -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Détail par type de réparation</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -140,7 +157,7 @@
                                     <h6 class="mb-0">{{ type_stat.label }}</h6>
                                 </div>
                                 <div class="text-end">
-                                    <strong class="text-primary fs-5">{{ type_stat.cout|floatformat:0|intcomma }} F</strong><br>
+                                    <strong class="fs-5">{{ type_stat.cout|floatformat:0|intcomma }} F</strong><br>
                                     <small class="text-muted">{{ type_stat.pourcentage|floatformat:1 }} %</small>
                                 </div>
                             </div>
@@ -151,7 +168,19 @@
             </div>
             {% endif %}
 
-            {% if not vehicules_stats %}
+            <!-- Graphique coût par véhicule -->
+            {% if vehicules_stats %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bus-front me-2"></i>Coût des réparations par véhicule</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="barChartVehicules" height="300"></canvas>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not vehicules_stats and not types_stats %}
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
                 Aucune réparation trouvée pour cette période.
@@ -160,4 +189,174 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    var couleurs = [
+        '#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0',
+        '#6f42c1', '#fd7e14', '#20c997', '#6610f2', '#d63384',
+        '#495057', '#0b5ed7', '#157347', '#e2a100', '#bb2d3b'
+    ];
+
+    function formatFCFA(value) {
+        return value.toLocaleString('fr-FR') + ' F';
+    }
+
+    // --- Graphiques par type de réparation ---
+    var typesRaw = '{{ types_stats_json|escapejs }}';
+    var typesData = [];
+    try { typesData = JSON.parse(typesRaw); } catch(e) {}
+
+    if (typesData.length > 0) {
+        var tLabels = typesData.map(function(t) { return t.label; });
+        var tMontants = typesData.map(function(t) { return t.cout; });
+        var tPourcentages = typesData.map(function(t) { return t.pourcentage; });
+        var tCouleurs = couleurs.slice(0, tLabels.length);
+
+        // Barre horizontale
+        var barEl = document.getElementById('barChartTypes');
+        if (barEl) {
+            new Chart(barEl, {
+                type: 'bar',
+                data: {
+                    labels: tLabels,
+                    datasets: [{
+                        label: 'Montant (F CFA)',
+                        data: tMontants,
+                        backgroundColor: tCouleurs,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Coût par type de réparation',
+                            font: { size: 14, weight: 'bold' }
+                        },
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) { return formatFCFA(ctx.parsed.x); }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(v) { return formatFCFA(v); }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Doughnut
+        var doughEl = document.getElementById('doughnutChartTypes');
+        if (doughEl) {
+            new Chart(doughEl, {
+                type: 'doughnut',
+                data: {
+                    labels: tLabels,
+                    datasets: [{
+                        data: tPourcentages,
+                        backgroundColor: tCouleurs,
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Répartition en pourcentage',
+                            font: { size: 14, weight: 'bold' }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 12 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    var idx = ctx.dataIndex;
+                                    return ctx.label + ': ' + ctx.parsed.toFixed(1) + '% (' + formatFCFA(tMontants[idx]) + ')';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // --- Graphique par véhicule ---
+    var vehRaw = '{{ vehicules_stats_json|escapejs }}';
+    var vehData = [];
+    try { vehData = JSON.parse(vehRaw); } catch(e) {}
+
+    if (vehData.length > 0) {
+        var vLabels = vehData.map(function(v) { return v.label; });
+        var vMontants = vehData.map(function(v) { return v.cout; });
+        var vCouleurs = vehData.map(function(v) {
+            if (v.niveau === 'critique') return '#dc3545';
+            if (v.niveau === 'surveillance') return '#ffc107';
+            return '#198754';
+        });
+
+        var vehEl = document.getElementById('barChartVehicules');
+        if (vehEl) {
+            new Chart(vehEl, {
+                type: 'bar',
+                data: {
+                    labels: vLabels,
+                    datasets: [{
+                        label: 'Coût total (F CFA)',
+                        data: vMontants,
+                        backgroundColor: vCouleurs,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Top véhicules par coût de réparations',
+                            font: { size: 14, weight: 'bold' }
+                        },
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) { return formatFCFA(ctx.parsed.x); }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(v) { return formatFCFA(v); }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+});
+</script>
 {% endblock %}
