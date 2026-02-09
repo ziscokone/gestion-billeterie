@@ -6,8 +6,11 @@ from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
+import logging
 from datetime import datetime, timedelta
 from core.mixins import AdminRequiredMixin
+
+logger = logging.getLogger(__name__)
 from .models import ModeleVehicule, Vehicule, ReparationVehicule, TypeReparation
 from .forms import ModeleVehiculeForm, VehiculeForm, ReparationVehiculeForm, TypeReparationForm
 from apps.compagnie.models import Compagnie
@@ -257,81 +260,94 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Récupérer les filtres de date
-        date_debut = self.request.GET.get('date_debut')
-        date_fin = self.request.GET.get('date_fin')
+        try:
+            # Récupérer les filtres de date
+            date_debut = self.request.GET.get('date_debut')
+            date_fin = self.request.GET.get('date_fin')
 
-        # Par défaut, les 12 derniers mois
-        if not date_debut:
-            date_debut = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
-        if not date_fin:
-            date_fin = datetime.now().strftime('%Y-%m-%d')
+            # Par défaut, les 12 derniers mois
+            if not date_debut:
+                date_debut = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+            if not date_fin:
+                date_fin = datetime.now().strftime('%Y-%m-%d')
 
-        context['date_debut'] = date_debut
-        context['date_fin'] = date_fin
+            context['date_debut'] = date_debut
+            context['date_fin'] = date_fin
 
-        # Requête filtrée
-        reparations = ReparationVehicule.objects.filter(
-            date_reparation__gte=date_debut,
-            date_reparation__lte=date_fin
-        )
+            # Requête filtrée
+            reparations = ReparationVehicule.objects.filter(
+                date_reparation__gte=date_debut,
+                date_reparation__lte=date_fin
+            )
 
-        # Statistiques globales
-        context['cout_total'] = reparations.aggregate(total=Sum('montant'))['total'] or 0
-        context['nb_reparations'] = reparations.count()
-        context['nb_vehicules'] = reparations.values('vehicule').distinct().count()
+            # Statistiques globales
+            context['cout_total'] = reparations.aggregate(total=Sum('montant'))['total'] or 0
+            context['nb_reparations'] = reparations.count()
+            context['nb_vehicules'] = reparations.values('vehicule').distinct().count()
 
-        # Statistiques par véhicule
-        vehicules_stats = []
-        for vehicule in Vehicule.objects.all():
-            reparations_vehicule = reparations.filter(vehicule=vehicule)
-            cout_total = reparations_vehicule.aggregate(total=Sum('montant'))['total'] or 0
-            nb_reparations = reparations_vehicule.count()
+            # Statistiques par véhicule
+            vehicules_stats = []
+            for vehicule in Vehicule.objects.select_related('modele').all():
+                reparations_vehicule = reparations.filter(vehicule=vehicule)
+                cout_total = reparations_vehicule.aggregate(total=Sum('montant'))['total'] or 0
+                nb_reparations = reparations_vehicule.count()
 
-            if nb_reparations > 0:
-                cout_moyen = cout_total / nb_reparations
+                if nb_reparations > 0:
+                    cout_moyen = cout_total / nb_reparations
 
-                # Déterminer le niveau d'alerte
-                if cout_total > 2000000:
-                    niveau_alerte = 'critique'
-                elif cout_total > 1000000:
-                    niveau_alerte = 'surveillance'
-                else:
-                    niveau_alerte = 'normal'
+                    # Déterminer le niveau d'alerte
+                    if cout_total > 2000000:
+                        niveau_alerte = 'critique'
+                    elif cout_total > 1000000:
+                        niveau_alerte = 'surveillance'
+                    else:
+                        niveau_alerte = 'normal'
 
-                vehicules_stats.append({
-                    'vehicule': vehicule,
-                    'cout_total': cout_total,
-                    'nb_reparations': nb_reparations,
-                    'cout_moyen': cout_moyen,
-                    'niveau_alerte': niveau_alerte
-                })
+                    vehicules_stats.append({
+                        'vehicule': vehicule,
+                        'cout_total': cout_total,
+                        'nb_reparations': nb_reparations,
+                        'cout_moyen': cout_moyen,
+                        'niveau_alerte': niveau_alerte
+                    })
 
-        # Trier par coût total décroissant
-        vehicules_stats.sort(key=lambda x: x['cout_total'], reverse=True)
-        context['vehicules_stats'] = vehicules_stats
+            # Trier par coût total décroissant
+            vehicules_stats.sort(key=lambda x: x['cout_total'], reverse=True)
+            context['vehicules_stats'] = vehicules_stats
 
-        # Répartition par type de réparation
-        types_stats = []
-        cout_total_types = context['cout_total']
-        for type_rep in TypeReparation.objects.filter(actif=True):
-            cout = reparations.filter(type_reparation=type_rep).aggregate(total=Sum('montant'))['total'] or 0
-            if cout > 0:
-                pourcentage = (cout / cout_total_types * 100) if cout_total_types > 0 else 0
-                types_stats.append({
-                    'label': type_rep.nom,
-                    'cout': cout,
-                    'pourcentage': pourcentage
-                })
+            # Répartition par type de réparation
+            types_stats = []
+            cout_total_types = context['cout_total']
+            for type_rep in TypeReparation.objects.filter(actif=True):
+                cout = reparations.filter(type_reparation=type_rep).aggregate(total=Sum('montant'))['total'] or 0
+                if cout > 0:
+                    pourcentage = (cout / cout_total_types * 100) if cout_total_types > 0 else 0
+                    types_stats.append({
+                        'label': type_rep.nom,
+                        'cout': cout,
+                        'pourcentage': pourcentage
+                    })
 
-        context['types_stats'] = types_stats
-        context['types_stats_json'] = json.dumps([
-            {'label': t['label'], 'cout': float(t['cout']), 'pourcentage': round(t['pourcentage'], 1)}
-            for t in types_stats
-        ])
+            context['types_stats'] = types_stats
+            context['types_stats_json'] = json.dumps([
+                {'label': t['label'], 'cout': float(t['cout']), 'pourcentage': round(t['pourcentage'], 1)}
+                for t in types_stats
+            ])
 
-        # Véhicules critiques (> 2M)
-        context['vehicules_critiques'] = [v for v in vehicules_stats if v['niveau_alerte'] == 'critique']
+            # Véhicules critiques (> 2M)
+            context['vehicules_critiques'] = [v for v in vehicules_stats if v['niveau_alerte'] == 'critique']
+
+        except Exception as e:
+            logger.error(f"Erreur dans RapportReparationsView: {e}", exc_info=True)
+            context.setdefault('date_debut', datetime.now().strftime('%Y-%m-%d'))
+            context.setdefault('date_fin', datetime.now().strftime('%Y-%m-%d'))
+            context.setdefault('cout_total', 0)
+            context.setdefault('nb_reparations', 0)
+            context.setdefault('nb_vehicules', 0)
+            context.setdefault('vehicules_stats', [])
+            context.setdefault('types_stats', [])
+            context.setdefault('types_stats_json', '[]')
+            context.setdefault('vehicules_critiques', [])
 
         return context
 
