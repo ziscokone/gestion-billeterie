@@ -192,9 +192,16 @@
 {% endblock %}
 
 {% block extra_js %}
+<script id="types-data" type="application/json">{{ types_stats_json|safe }}</script>
+<script id="vehicules-data" type="application/json">{{ vehicules_stats_json|safe }}</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js non chargé');
+        return;
+    }
 
     var couleurs = [
         '#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0',
@@ -207,9 +214,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Graphiques par type de réparation ---
-    var typesRaw = '{{ types_stats_json|escapejs }}';
     var typesData = [];
-    try { typesData = JSON.parse(typesRaw); } catch(e) {}
+    try {
+        typesData = JSON.parse(document.getElementById('types-data').textContent);
+    } catch(e) { console.error('Erreur parsing types:', e); }
 
     if (typesData.length > 0) {
         var tLabels = typesData.map(function(t) { return t.label; });
@@ -302,9 +310,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Graphique par véhicule ---
-    var vehRaw = '{{ vehicules_stats_json|escapejs }}';
     var vehData = [];
-    try { vehData = JSON.parse(vehRaw); } catch(e) {}
+    try {
+        vehData = JSON.parse(document.getElementById('vehicules-data').textContent);
+    } catch(e) { console.error('Erreur parsing vehicules:', e); }
 
     if (vehData.length > 0) {
         var vLabels = vehData.map(function(v) { return v.label; });
