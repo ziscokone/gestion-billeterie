@@ -131,13 +131,13 @@
                 <div class="card-header">
                     <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Analyse par type de réparation</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body chart-zone">
                     <div class="row">
-                        <div class="col-lg-7 mb-3">
-                            <canvas id="barChartTypes" height="300"></canvas>
+                        <div class="col-lg-7 mb-3" style="position:relative; height:300px;">
+                            <canvas id="barChartTypes"></canvas>
                         </div>
-                        <div class="col-lg-5 mb-3">
-                            <canvas id="doughnutChartTypes" height="300"></canvas>
+                        <div class="col-lg-5 mb-3" style="position:relative; height:300px;">
+                            <canvas id="doughnutChartTypes"></canvas>
                         </div>
                     </div>
                 </div>
@@ -174,8 +174,8 @@
                 <div class="card-header">
                     <h5 class="mb-0"><i class="bi bi-bus-front me-2"></i>Coût des réparations par véhicule</h5>
                 </div>
-                <div class="card-body">
-                    <canvas id="barChartVehicules" height="300"></canvas>
+                <div class="card-body chart-zone" style="position:relative; height:300px;">
+                    <canvas id="barChartVehicules"></canvas>
                 </div>
             </div>
             {% endif %}
@@ -194,12 +194,15 @@
 {% block extra_js %}
 <script id="types-data" type="application/json">{{ types_stats_json|safe }}</script>
 <script id="vehicules-data" type="application/json">{{ vehicules_stats_json|safe }}</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+        onerror="document.querySelectorAll('.chart-zone').forEach(function(el){el.innerHTML='<p class=text-danger>Erreur: impossible de charger Chart.js (vérifiez votre connexion internet)</p>';})"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
     if (typeof Chart === 'undefined') {
-        console.error('Chart.js non chargé');
+        document.querySelectorAll('.chart-zone').forEach(function(el) {
+            el.innerHTML = '<p class="text-danger text-center py-3">Chart.js non disponible</p>';
+        });
         return;
     }
 

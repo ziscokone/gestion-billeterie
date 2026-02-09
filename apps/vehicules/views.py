@@ -330,7 +330,7 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
 
             context['types_stats'] = types_stats
             context['types_stats_json'] = json.dumps([
-                {'label': t['label'], 'cout': float(t['cout']), 'pourcentage': round(t['pourcentage'], 1)}
+                {'label': t['label'], 'cout': float(t['cout']), 'pourcentage': float(round(t['pourcentage'], 1))}
                 for t in types_stats
             ])
 
