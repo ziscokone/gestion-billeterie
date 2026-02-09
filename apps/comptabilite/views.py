@@ -36,7 +36,7 @@ class PointJournalierView(LoginRequiredMixin, TemplateView):
 
         context['date_selectionnee'] = date
 
-        # Construire le queryset de base
+        # Construire le queryset billets de base
         billets_query = Billet.objects.filter(
             statut='paye',
             date_paiement__date=date
@@ -45,7 +45,7 @@ class PointJournalierView(LoginRequiredMixin, TemplateView):
         if not user.has_global_access:
             billets_query = billets_query.filter(voyage__gare=user.gare)
 
-        # Stats globales
+        # Stats globales billets
         stats = billets_query.aggregate(
             total_billets=Count('id'),
             total_montant=Sum('montant')
@@ -53,6 +53,54 @@ class PointJournalierView(LoginRequiredMixin, TemplateView):
 
         context['total_billets'] = stats['total_billets'] or 0
         context['total_montant'] = stats['total_montant'] or 0
+
+        # --- Voyages du jour ---
+        voyages_query = Voyage.objects.filter(
+            date_depart=date,
+            statut__in=['programme', 'en_cours', 'termine']
+        ).select_related(
+            'gare', 'ligne', 'vehicule'
+        ).prefetch_related('billets', 'depenses')
+
+        if not user.has_global_access:
+            voyages_query = voyages_query.filter(gare=user.gare)
+
+        voyages_query = voyages_query.order_by('gare__nom', 'heure_depart', 'numero_depart')
+
+        # Construire la liste des voyages avec stats
+        voyages_du_jour = []
+        total_recette_bagages = Decimal('0')
+        total_depenses = Decimal('0')
+        total_benefice_net = Decimal('0')
+
+        for voyage in voyages_query:
+            nb_billets = voyage.billets.filter(statut='paye').count()
+            recette_tickets = voyage.billets.filter(statut='paye').aggregate(
+                total=Sum('montant')
+            )['total'] or Decimal('0')
+            recette_bagages = voyage.recette_bagages or Decimal('0')
+            depenses_voyage = sum(
+                (d.montant for d in voyage.depenses.all()), Decimal('0')
+            )
+            benefice = (recette_tickets + recette_bagages) - depenses_voyage
+
+            voyages_du_jour.append({
+                'voyage': voyage,
+                'nb_billets': nb_billets,
+                'recette_tickets': recette_tickets,
+                'recette_bagages': recette_bagages,
+                'total_depenses': depenses_voyage,
+                'benefice_net': benefice,
+            })
+
+            total_recette_bagages += recette_bagages
+            total_depenses += depenses_voyage
+            total_benefice_net += benefice
+
+        context['voyages_du_jour'] = voyages_du_jour
+        context['total_recette_bagages'] = total_recette_bagages
+        context['total_depenses'] = total_depenses
+        context['total_benefice_net'] = total_benefice_net
 
         # Stats par guichetier
         if user.has_global_access or user.is_chef_gare:
@@ -77,9 +125,6 @@ class PointJournalierView(LoginRequiredMixin, TemplateView):
             ).order_by('-montant')
 
             context['gares_stats'] = gares_stats
-
-        # Liste des derniers billets
-        context['derniers_billets'] = billets_query.order_by('-date_paiement')[:20]
 
         return context
 

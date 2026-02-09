@@ -338,7 +338,6 @@
                     <th>Téléphone</th>
                     <th class="text-center" style="width: 40px;">Siège</th>
                     <th>Destination</th>
-                    <th class="text-end" style="width: 80px;">Montant</th>
                 </tr>
             </thead>
             <tbody>
@@ -355,11 +354,10 @@
                             {{ voyage.ligne.ville_arrivee }}
                         {% endif %}
                     </td>
-                    <td class="text-end">{{ billet.montant|format_montant }} FCFA</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 15px; color: #7f8c8d;">
+                    <td colspan="5" style="text-align: center; padding: 15px; color: #7f8c8d;">
                         Aucun passager enregistré pour ce voyage
                     </td>
                 </tr>
@@ -368,7 +366,7 @@
             {% if billets %}
             <tfoot>
                 <tr>
-                    <td colspan="6" class="text-center">
+                    <td colspan="5" class="text-center">
                         <strong>Total : {{ billets.count }} passager{{ billets.count|pluralize }}</strong>
                     </td>
                 </tr>

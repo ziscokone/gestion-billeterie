@@ -364,6 +364,7 @@
         <table>
             <thead>
                 <tr>
+                    <th style="width: 30px;" class="text-center">N°</th>
                     <th>Nom du Passager</th>
                     <th>Téléphone</th>
                     <th class="text-center" style="width: 40px;">Siège</th>
@@ -374,6 +375,7 @@
             <tbody>
                 {% for billet in billets %}
                 <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
                     <td><strong>{{ billet.client_nom }}</strong></td>
                     <td>{{ billet.client_telephone }}</td>
                     <td class="text-center"><strong>{{ billet.numero_siege }}</strong></td>
@@ -388,7 +390,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 15px; color: #7f8c8d;">
+                    <td colspan="6" style="text-align: center; padding: 15px; color: #7f8c8d;">
                         Aucun passager enregistré pour ce voyage
                     </td>
                 </tr>
