@@ -168,7 +168,7 @@ class RapportPeriodeView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['date_debut'] = date_debut
         context['date_fin'] = date_fin
 
-        # Queryset de base
+        # Queryset billets de base
         billets_query = Billet.objects.filter(
             statut='paye',
             date_paiement__date__gte=date_debut,
@@ -178,7 +178,7 @@ class RapportPeriodeView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         if not user.has_global_access:
             billets_query = billets_query.filter(voyage__gare=user.gare)
 
-        # Stats globales
+        # Stats globales billets
         stats = billets_query.aggregate(
             total_billets=Count('id'),
             total_montant=Sum('montant')
@@ -187,39 +187,78 @@ class RapportPeriodeView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['total_billets'] = stats['total_billets'] or 0
         context['total_montant'] = stats['total_montant'] or 0
 
-        # Stats par jour
-        stats_par_jour = billets_query.values(
-            'date_paiement__date'
-        ).annotate(
-            nb_billets=Count('id'),
-            montant=Sum('montant')
-        ).order_by('date_paiement__date')
+        # --- Voyages de la période ---
+        voyages_query = Voyage.objects.filter(
+            date_depart__gte=date_debut,
+            date_depart__lte=date_fin,
+            statut__in=['programme', 'en_cours', 'termine']
+        ).select_related(
+            'gare', 'ligne', 'vehicule'
+        ).prefetch_related('billets', 'depenses')
 
-        context['stats_par_jour'] = stats_par_jour
+        if not user.has_global_access:
+            voyages_query = voyages_query.filter(gare=user.gare)
 
-        # Stats par ligne
-        stats_par_ligne = billets_query.values(
-            'voyage__ligne__nom'
-        ).annotate(
-            nb_billets=Count('id'),
-            montant=Sum('montant')
-        ).order_by('-montant')
+        voyages_query = voyages_query.order_by('date_depart', 'gare__nom', 'heure_depart', 'numero_depart')
 
-        context['stats_par_ligne'] = stats_par_ligne
+        # Construire la liste des voyages avec stats
+        voyages_periode = []
+        total_recette_bagages = Decimal('0')
+        total_depenses = Decimal('0')
+        total_benefice_net = Decimal('0')
+
+        for voyage in voyages_query:
+            nb_billets = voyage.billets.filter(statut='paye').count()
+            recette_tickets = voyage.billets.filter(statut='paye').aggregate(
+                total=Sum('montant')
+            )['total'] or Decimal('0')
+            recette_bagages = voyage.recette_bagages or Decimal('0')
+            depenses_voyage = sum(
+                (d.montant for d in voyage.depenses.all()), Decimal('0')
+            )
+            benefice = (recette_tickets + recette_bagages) - depenses_voyage
+
+            voyages_periode.append({
+                'voyage': voyage,
+                'nb_billets': nb_billets,
+                'recette_tickets': recette_tickets,
+                'recette_bagages': recette_bagages,
+                'total_depenses': depenses_voyage,
+                'benefice_net': benefice,
+            })
+
+            total_recette_bagages += recette_bagages
+            total_depenses += depenses_voyage
+            total_benefice_net += benefice
+
+        context['voyages_periode'] = voyages_periode
+        context['total_recette_bagages'] = total_recette_bagages
+        context['total_depenses'] = total_depenses
+        context['total_benefice_net'] = total_benefice_net
 
         # Stats par guichetier
-        stats_par_guichetier = billets_query.values(
-            'guichetier__nom_complet'
-        ).annotate(
-            nb_billets=Count('id'),
-            montant=Sum('montant')
-        ).order_by('-montant')
+        if user.has_global_access or user.is_chef_gare:
+            guichetiers_stats = billets_query.values(
+                'guichetier__nom_complet',
+                'guichetier__id'
+            ).annotate(
+                nb_billets=Count('id'),
+                montant=Sum('montant')
+            ).order_by('-montant')
 
-        context['stats_par_guichetier'] = stats_par_guichetier
+            context['guichetiers_stats'] = guichetiers_stats
 
-        # Gares disponibles pour filtrage (admin global)
+        # Stats par gare (pour admin global)
         if user.has_global_access:
-            context['gares'] = Gare.objects.filter(active=True)
+            gares_stats = billets_query.values(
+                'voyage__gare__nom',
+                'voyage__gare__id'
+            ).annotate(
+                nb_billets=Count('id'),
+                montant=Sum('montant')
+            ).order_by('-montant')
+
+            context['gares_stats'] = gares_stats
 
         return context
 

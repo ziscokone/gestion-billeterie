@@ -37,109 +37,131 @@
 
     <!-- Résumé période -->
     <div class="row g-4 mb-4">
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="stat-card">
                 <div class="stat-value">{{ total_billets }}</div>
                 <div class="stat-label">
                     <i class="bi bi-ticket-perforated me-1"></i>
-                    Billets vendus sur la période
+                    Billets vendus
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="stat-card">
-                <div class="stat-value" style="font-size: 1.5rem;">{{ total_montant|format_montant }} FCFA</div>
+                <div class="stat-value" style="font-size: 1.3rem;">{{ total_montant|format_montant }} FCFA</div>
                 <div class="stat-label">
                     <i class="bi bi-cash me-1"></i>
-                    Montant total
+                    Recette tickets
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value" style="font-size: 1.3rem;">{{ total_recette_bagages|format_montant }} FCFA</div>
+                <div class="stat-label">
+                    <i class="bi bi-luggage me-1"></i>
+                    Recette bagages
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value" style="font-size: 1.3rem;">{{ total_depenses|format_montant }} FCFA</div>
+                <div class="stat-label">
+                    <i class="bi bi-arrow-down-circle me-1"></i>
+                    Total dépenses
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Stats par jour -->
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-calendar3 me-2"></i>Par jour
-                </div>
-                <div class="card-body p-0">
-                    {% if stats_par_jour %}
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th class="text-center">Billets</th>
-                                    <th class="text-end">Montant</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for stat in stats_par_jour %}
-                                <tr>
-                                    <td>{{ stat.date_paiement__date|date:"d/m/Y" }}</td>
-                                    <td class="text-center">
-                                        <span class="badge bg-secondary">{{ stat.nb_billets }}</span>
-                                    </td>
-                                    <td class="text-end">{{ stat.montant|format_montant }} FCFA</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4 text-muted">Aucune donnée</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats par ligne -->
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-signpost-2 me-2"></i>Par ligne
-                </div>
-                <div class="card-body p-0">
-                    {% if stats_par_ligne %}
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Ligne</th>
-                                    <th class="text-center">Billets</th>
-                                    <th class="text-end">Montant</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for stat in stats_par_ligne %}
-                                <tr>
-                                    <td>{{ stat.voyage__ligne__nom }}</td>
-                                    <td class="text-center">
-                                        <span class="badge bg-secondary">{{ stat.nb_billets }}</span>
-                                    </td>
-                                    <td class="text-end">{{ stat.montant|format_montant }} FCFA</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4 text-muted">Aucune donnée</div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats par guichetier -->
+    <!-- Bénéfice net -->
+    <div class="row g-4 mb-4">
         <div class="col-12">
+            <div class="stat-card">
+                <div class="stat-value" style="font-size: 1.75rem;">{{ total_benefice_net|format_montant }} FCFA</div>
+                <div class="stat-label">
+                    <i class="bi bi-graph-up-arrow me-1"></i>
+                    Bénéfice net
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voyages de la période -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="bi bi-bus-front me-2"></i>Voyages de la période
+        </div>
+        <div class="card-body p-0">
+            {% if voyages_periode %}
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Gare</th>
+                            <th class="text-center">N°</th>
+                            <th>Ligne</th>
+                            <th class="text-center">Heure</th>
+                            <th>Véhicule</th>
+                            <th class="text-center">Tickets</th>
+                            <th class="text-end">Rec. Tickets</th>
+                            <th class="text-end">Rec. Bagages</th>
+                            <th class="text-end">Dépenses</th>
+                            <th class="text-end">Bénéf. Net</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in voyages_periode %}
+                        <tr>
+                            <td>{{ v.voyage.date_depart|date:"d/m/Y" }}</td>
+                            <td>{{ v.voyage.gare.nom }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ v.voyage.numero_depart }}</span>
+                            </td>
+                            <td>{{ v.voyage.ligne.nom }}</td>
+                            <td class="text-center">{{ v.voyage.heure_depart|time:"H:i" }}</td>
+                            <td>{{ v.voyage.vehicule.immatriculation|default:"-" }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ v.nb_billets }}</span>
+                            </td>
+                            <td class="text-end">{{ v.recette_tickets|format_montant }}</td>
+                            <td class="text-end">{{ v.recette_bagages|format_montant }}</td>
+                            <td class="text-end">{{ v.total_depenses|format_montant }}</td>
+                            <td class="text-end fw-bold">{{ v.benefice_net|format_montant }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold" style="border-top: 2px solid var(--border-color);">
+                            <td colspan="6">TOTAUX</td>
+                            <td class="text-center">{{ total_billets }}</td>
+                            <td class="text-end">{{ total_montant|format_montant }}</td>
+                            <td class="text-end">{{ total_recette_bagages|format_montant }}</td>
+                            <td class="text-end">{{ total_depenses|format_montant }}</td>
+                            <td class="text-end">{{ total_benefice_net|format_montant }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                Aucun voyage sur cette période
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Stats par guichetier -->
+        {% if guichetiers_stats %}
+        <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
                     <i class="bi bi-people me-2"></i>Par guichetier
                 </div>
                 <div class="card-body p-0">
-                    {% if stats_par_guichetier %}
                     <div class="table-responsive">
                         <table class="table mb-0">
                             <thead>
@@ -150,7 +172,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for stat in stats_par_guichetier %}
+                                {% for stat in guichetiers_stats %}
                                 <tr>
                                     <td>{{ stat.guichetier__nom_complet|default:"Non assigné" }}</td>
                                     <td class="text-center">
@@ -162,12 +184,45 @@
                             </tbody>
                         </table>
                     </div>
-                    {% else %}
-                    <div class="text-center py-4 text-muted">Aucune donnée</div>
-                    {% endif %}
                 </div>
             </div>
         </div>
+        {% endif %}
+
+        <!-- Stats par gare -->
+        {% if gares_stats %}
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-building me-2"></i>Par gare
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Gare</th>
+                                    <th class="text-center">Billets</th>
+                                    <th class="text-end">Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in gares_stats %}
+                                <tr>
+                                    <td>{{ stat.voyage__gare__nom }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ stat.nb_billets }}</span>
+                                    </td>
+                                    <td class="text-end">{{ stat.montant|format_montant }} FCFA</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
