@@ -25,6 +25,7 @@ urlpatterns = [
 
     # Rapport analytique
     path('rapport/', views.RapportReparationsView.as_view(), name='rapport_reparations'),
+    path('rentabilite/', views.RentabiliteVehiculeView.as_view(), name='rentabilite'),
 
     # Types de réparation
     path('types-reparation/', views.TypeReparationListView.as_view(), name='type_reparation_list'),

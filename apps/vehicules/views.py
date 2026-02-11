@@ -1,13 +1,16 @@
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q, Sum, Count
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.utils import timezone
 import json
 import logging
 from datetime import datetime, timedelta
+from decimal import Decimal
 from core.mixins import AdminRequiredMixin
 
 logger = logging.getLogger(__name__)
@@ -420,6 +423,166 @@ class TypeReparationDeleteView(AdminRequiredMixin, DeleteView):
         messages.success(self.request, 'Type de réparation supprimé avec succès.')
         return super().form_valid(form)
 
+
+
+# ==================== RENTABILITÉ VÉHICULE ====================
+
+class RentabiliteVehiculeView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    """Rapport de rentabilité d'un véhicule sur une période donnée."""
+    template_name = 'vehicules/rentabilite.html'
+
+    def test_func(self):
+        """Accessible uniquement par PDG, Super Admin et Manager."""
+        return self.request.user.role in ['pdg', 'super_admin', 'manager']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Paramètres de filtrage
+        vehicule_id = self.request.GET.get('vehicule')
+        date_debut_str = self.request.GET.get('date_debut')
+        date_fin_str = self.request.GET.get('date_fin')
+
+        today = timezone.now().date()
+
+        # Parse des dates
+        if date_debut_str:
+            try:
+                date_debut = datetime.strptime(date_debut_str, '%Y-%m-%d').date()
+            except ValueError:
+                date_debut = today.replace(day=1)
+        else:
+            date_debut = today.replace(day=1)
+
+        if date_fin_str:
+            try:
+                date_fin = datetime.strptime(date_fin_str, '%Y-%m-%d').date()
+            except ValueError:
+                date_fin = today
+        else:
+            date_fin = today
+
+        if date_fin < date_debut:
+            date_fin = date_debut
+
+        context['date_debut'] = date_debut
+        context['date_fin'] = date_fin
+
+        # Liste des véhicules pour le filtre
+        context['vehicules'] = Vehicule.objects.select_related('modele').order_by('immatriculation')
+
+        # Véhicule sélectionné
+        vehicule_selectionne = None
+        if vehicule_id:
+            try:
+                vehicule_selectionne = Vehicule.objects.select_related('modele').get(id=vehicule_id)
+            except Vehicule.DoesNotExist:
+                pass
+        context['vehicule_selectionne'] = vehicule_selectionne
+
+        if not vehicule_selectionne:
+            context['donnees_rapport'] = []
+            return context
+
+        # Voyages du véhicule sur la période
+        from apps.voyages.models import Voyage
+        voyages_query = Voyage.objects.filter(
+            vehicule=vehicule_selectionne,
+            date_depart__gte=date_debut,
+            date_depart__lte=date_fin,
+            statut__in=['programme', 'en_cours', 'termine']
+        ).select_related('gare', 'ligne').prefetch_related(
+            'billets', 'depenses', 'depenses__type_depense'
+        ).order_by('date_depart', 'heure_depart', 'numero_depart')
+
+        # Construire les données du rapport
+        donnees_rapport = []
+        types_depenses_presents = set()
+        total_nb_passagers = 0
+        total_recette_billets = Decimal('0')
+        total_recette_bagages = Decimal('0')
+        total_depenses = Decimal('0')
+
+        for voyage in voyages_query:
+            nb_passagers = voyage.billets.filter(statut='paye').count()
+            recette_billets = voyage.billets.filter(statut='paye').aggregate(
+                total=Sum('montant')
+            )['total'] or Decimal('0')
+            recette_bagages = voyage.recette_bagages or Decimal('0')
+
+            # Dépenses par type
+            depenses_par_type = {}
+            total_depenses_voyage = Decimal('0')
+
+            for depense in voyage.depenses.all():
+                type_nom = depense.type_depense.nom
+                if type_nom not in depenses_par_type:
+                    depenses_par_type[type_nom] = Decimal('0')
+                depenses_par_type[type_nom] += depense.montant
+                total_depenses_voyage += depense.montant
+                types_depenses_presents.add(type_nom)
+
+            benefice_net = (recette_billets + recette_bagages) - total_depenses_voyage
+
+            donnees_rapport.append({
+                'voyage': voyage,
+                'date': voyage.date_depart,
+                'gare': voyage.gare.nom,
+                'ligne': voyage.ligne.nom,
+                'numero_depart': voyage.numero_depart,
+                'nb_passagers': nb_passagers,
+                'recette_billets': recette_billets,
+                'recette_bagages': recette_bagages,
+                'depenses': depenses_par_type,
+                'total_depenses': total_depenses_voyage,
+                'benefice_net': benefice_net,
+            })
+
+            total_nb_passagers += nb_passagers
+            total_recette_billets += recette_billets
+            total_recette_bagages += recette_bagages
+            total_depenses += total_depenses_voyage
+
+        context['donnees_rapport'] = donnees_rapport
+        context['types_depenses_presents'] = sorted(list(types_depenses_presents))
+
+        # Réparations du véhicule sur la période
+        total_reparations = ReparationVehicule.objects.filter(
+            vehicule=vehicule_selectionne,
+            date_reparation__gte=date_debut,
+            date_reparation__lte=date_fin
+        ).aggregate(total=Sum('montant'))['total'] or Decimal('0')
+
+        # Colonnes dynamiques
+        colonnes = ['Date', 'Gare', 'Ligne', 'N° Départ', 'Nb Pass.', 'Recette Billets', 'Recette Bagages']
+        colonnes.extend(sorted(list(types_depenses_presents)))
+        colonnes.extend(['Total Dépenses', 'Bénéfice Net'])
+        context['colonnes'] = colonnes
+
+        # Totaux par colonne
+        totaux = {
+            'nb_passagers': total_nb_passagers,
+            'recette_billets': total_recette_billets,
+            'recette_bagages': total_recette_bagages,
+            'total_depenses': total_depenses,
+            'benefice_net': (total_recette_billets + total_recette_bagages) - total_depenses,
+        }
+        for type_dep_nom in types_depenses_presents:
+            totaux[type_dep_nom] = sum(
+                d['depenses'].get(type_dep_nom, Decimal('0'))
+                for d in donnees_rapport
+            )
+        context['totaux'] = totaux
+
+        # Cartes récapitulatives
+        context['nb_voyages'] = len(donnees_rapport)
+        context['total_recette_billets'] = total_recette_billets
+        context['total_recette_bagages'] = total_recette_bagages
+        context['total_depenses'] = total_depenses
+        context['total_reparations'] = total_reparations
+        context['benefice_net_global'] = (total_recette_billets + total_recette_bagages) - total_depenses - total_reparations
+
+        return context
 
 
 # ==================== API AJAX ====================
