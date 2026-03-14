@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.programmes',
     'apps.voyages',
     'apps.billets',
+    'apps.clients',
     'apps.guichet',
     'apps.comptabilite',
 

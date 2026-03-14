@@ -40,6 +40,14 @@ class Billet(models.Model):
         null=True,
         blank=True
     )
+    client = models.ForeignKey(
+        'clients.Client',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='billets',
+        verbose_name="Client"
+    )
     client_nom = models.CharField(max_length=200, verbose_name="Nom du client")
     client_telephone = models.CharField(max_length=20, verbose_name="Téléphone du client")
     numero_siege = models.PositiveIntegerField(verbose_name="Numéro de siège")

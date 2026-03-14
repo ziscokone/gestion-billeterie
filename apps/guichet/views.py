@@ -7,9 +7,10 @@ from django.utils import timezone
 from django.db.models import Q
 from django.contrib import messages
 
-from apps.voyages.models import Voyage
 from apps.billets.models import Billet
+from apps.clients.models import Client
 from apps.destinations.models import Destination
+from apps.voyages.models import Voyage
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -261,6 +262,13 @@ def creer_billet(request, voyage_id):
                 'success': False,
                 'error': 'Aucun billet créé. Les sièges sont peut-être déjà pris.'
             })
+
+        # Associer ou créer le client
+        client_obj, _ = Client.objects.get_or_create(
+            telephone=client_telephone,
+            defaults={'nom_complet': client_nom}
+        )
+        Billet.objects.filter(pk__in=[b.pk for b in billets_crees]).update(client=client_obj)
 
         # Préparer les données pour l'impression
         billets_data = [billet.get_info_impression() for billet in billets_crees]

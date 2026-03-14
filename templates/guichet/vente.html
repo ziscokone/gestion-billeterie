@@ -170,15 +170,28 @@
                         {% csrf_token %}
 
                         <div class="mb-3">
-                            <label class="form-label">Nom du client *</label>
-                            <input type="text" class="form-control" name="client_nom"
-                                   placeholder="Nom complet du client" required>
+                            <label class="form-label">Téléphone *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                <input type="tel" class="form-control" name="client_telephone"
+                                       id="clientTelephone" placeholder="Numéro de téléphone" required
+                                       autocomplete="off">
+                                <span class="input-group-text" id="clientSearchStatus" style="display:none;">
+                                    <span id="clientFoundIcon" class="text-success" style="display:none;">
+                                        <i class="bi bi-person-check-fill"></i>
+                                    </span>
+                                    <span id="clientNewIcon" class="text-warning" style="display:none;">
+                                        <i class="bi bi-person-plus-fill"></i>
+                                    </span>
+                                </span>
+                            </div>
+                            <small id="clientFeedback" class="text-muted"></small>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Téléphone *</label>
-                            <input type="tel" class="form-control" name="client_telephone"
-                                   placeholder="Numéro de téléphone" required>
+                            <label class="form-label">Nom du client *</label>
+                            <input type="text" class="form-control" name="client_nom"
+                                   id="clientNom" placeholder="Nom complet du client" required>
                         </div>
 
                         <div class="mb-3">
@@ -325,6 +338,59 @@ document.addEventListener('DOMContentLoaded', function() {
     const printModal = new bootstrap.Modal(document.getElementById('printModal'));
     const destinationSelect = document.getElementById('destinationSelect');
     const montantAffiche = document.getElementById('montantAffiche');
+    const clientTelephone = document.getElementById('clientTelephone');
+    const clientNom = document.getElementById('clientNom');
+    const clientSearchStatus = document.getElementById('clientSearchStatus');
+    const clientFoundIcon = document.getElementById('clientFoundIcon');
+    const clientNewIcon = document.getElementById('clientNewIcon');
+    const clientFeedback = document.getElementById('clientFeedback');
+
+    // Recherche client par téléphone
+    let searchTimeout = null;
+    clientTelephone.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const tel = this.value.trim();
+
+        if (tel.length < 6) {
+            clientSearchStatus.style.display = 'none';
+            clientFoundIcon.style.display = 'none';
+            clientNewIcon.style.display = 'none';
+            clientFeedback.textContent = '';
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            fetch(`/clients/api/rechercher/?telephone=${encodeURIComponent(tel)}`)
+                .then(r => r.json())
+                .then(data => {
+                    clientSearchStatus.style.display = 'flex';
+                    if (data.found) {
+                        clientNom.value = data.nom_complet;
+                        clientNom.readOnly = true;
+                        clientFoundIcon.style.display = 'inline';
+                        clientNewIcon.style.display = 'none';
+                        clientFeedback.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Client existant : ' + data.nom_complet + '</span>';
+                    } else {
+                        clientNom.value = '';
+                        clientNom.readOnly = false;
+                        clientFoundIcon.style.display = 'none';
+                        clientNewIcon.style.display = 'inline';
+                        clientFeedback.innerHTML = '<span class="text-warning"><i class="bi bi-info-circle me-1"></i>Nouveau client — saisissez le nom</span>';
+                    }
+                })
+                .catch(() => {});
+        }, 400);
+    });
+
+    // Si on efface le téléphone, on déverrouille le nom
+    clientTelephone.addEventListener('blur', function() {
+        if (!this.value.trim()) {
+            clientNom.readOnly = false;
+            clientNom.value = '';
+            clientSearchStatus.style.display = 'none';
+            clientFeedback.textContent = '';
+        }
+    });
 
     // Affichage automatique du montant quand on sélectionne une destination
     destinationSelect.addEventListener('change', function() {

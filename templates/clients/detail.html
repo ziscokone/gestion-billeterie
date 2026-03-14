@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ client.nom_complet }} - Clients - Gestion Billetterie{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'clients:client_list' %}" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <span class="h4 mb-0">
+                <i class="bi bi-person-circle me-2 text-accent"></i>{{ client.nom_complet }}
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Fiche client -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-person me-2"></i>Informations
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Nom</dt>
+                        <dd class="col-7">{{ client.nom_complet }}</dd>
+
+                        <dt class="col-5 text-muted">Téléphone</dt>
+                        <dd class="col-7">
+                            <i class="bi bi-telephone me-1"></i>{{ client.telephone }}
+                        </dd>
+
+                        <dt class="col-5 text-muted">Client depuis</dt>
+                        <dd class="col-7">{{ client.date_creation|date:"d/m/Y" }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Statistiques -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="bi bi-bar-chart me-2"></i>Statistiques
+                </div>
+                <div class="card-body">
+                    <div class="row text-center g-3">
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <div class="h3 text-primary mb-0">{{ nb_voyages }}</div>
+                                <small class="text-muted">Voyage{{ nb_voyages|pluralize }}</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <div class="h3 text-success mb-0">{{ nb_payes }}</div>
+                                <small class="text-muted">Payé{{ nb_payes|pluralize }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gares fréquentées -->
+            {% if gares_frequentes %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="bi bi-building me-2"></i>Gares fréquentées
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for g in gares_frequentes %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ g.voyage__gare__nom }}
+                        <span class="badge bg-secondary">{{ g.nb }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Destinations fréquentes -->
+            {% if destinations_frequentes %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="bi bi-geo-alt me-2"></i>Destinations fréquentes
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for d in destinations_frequentes %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ d.destination__ville_arrivee }}
+                        <span class="badge bg-primary">{{ d.nb }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Historique des billets -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-ticket me-2"></i>Historique des billets</span>
+                    <span class="badge bg-secondary">{{ nb_voyages }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if billets %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>N° Ticket</th>
+                                    <th>Date</th>
+                                    <th>Gare</th>
+                                    <th>Destination</th>
+                                    <th>Siège</th>
+                                    <th>Statut</th>
+                                    <th class="text-end">Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for billet in billets %}
+                                <tr>
+                                    <td>
+                                        <code>{{ billet.numero }}</code>
+                                    </td>
+                                    <td class="text-muted small">
+                                        {{ billet.voyage.date_depart|date:"d/m/Y" }}
+                                        <br>{{ billet.voyage.heure_depart|time:"H:i" }}
+                                    </td>
+                                    <td>{{ billet.voyage.gare.nom }}</td>
+                                    <td>
+                                        {% if billet.destination %}
+                                            {{ billet.destination.ville_arrivee }}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ billet.numero_siege }}</td>
+                                    <td>
+                                        {% if billet.statut == 'paye' %}
+                                            <span class="badge bg-success">Payé</span>
+                                        {% elif billet.statut == 'reserve' %}
+                                            <span class="badge bg-warning text-dark">Réservé</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Reporté</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>{{ billet.montant|intcomma }} FCFA</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-ticket display-4"></i>
+                        <p class="mt-3">Aucun billet enregistré</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
