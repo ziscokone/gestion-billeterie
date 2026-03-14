@@ -171,19 +171,26 @@
 
                         <div class="mb-3">
                             <label class="form-label">Téléphone *</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                                <input type="tel" class="form-control" name="client_telephone"
-                                       id="clientTelephone" placeholder="Numéro de téléphone" required
-                                       autocomplete="off">
-                                <span class="input-group-text" id="clientSearchStatus" style="display:none;">
-                                    <span id="clientFoundIcon" class="text-success" style="display:none;">
-                                        <i class="bi bi-person-check-fill"></i>
+                            <div class="position-relative">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                    <input type="tel" class="form-control" name="client_telephone"
+                                           id="clientTelephone" placeholder="Numéro de téléphone" required
+                                           autocomplete="off">
+                                    <span class="input-group-text" id="clientSearchStatus" style="display:none;">
+                                        <span id="clientFoundIcon" class="text-success" style="display:none;">
+                                            <i class="bi bi-person-check-fill"></i>
+                                        </span>
+                                        <span id="clientNewIcon" class="text-warning" style="display:none;">
+                                            <i class="bi bi-person-plus-fill"></i>
+                                        </span>
                                     </span>
-                                    <span id="clientNewIcon" class="text-warning" style="display:none;">
-                                        <i class="bi bi-person-plus-fill"></i>
-                                    </span>
-                                </span>
+                                </div>
+                                <!-- Dropdown suggestions typeahead -->
+                                <div id="clientSuggestions"
+                                     class="list-group position-absolute w-100 shadow"
+                                     style="display:none; z-index:1050; top:100%; left:0;">
+                                </div>
                             </div>
                             <small id="clientFeedback" class="text-muted"></small>
                         </div>
@@ -345,51 +352,109 @@ document.addEventListener('DOMContentLoaded', function() {
     const clientNewIcon = document.getElementById('clientNewIcon');
     const clientFeedback = document.getElementById('clientFeedback');
 
-    // Recherche client par téléphone
+    // --- Typeahead client ---
+    const clientSuggestions = document.getElementById('clientSuggestions');
     let searchTimeout = null;
+    let clientSelectionne = false;
+
+    function hideSuggestions() {
+        clientSuggestions.style.display = 'none';
+        clientSuggestions.innerHTML = '';
+    }
+
+    function resetClientField() {
+        clientNom.readOnly = false;
+        clientNom.value = '';
+        clientSearchStatus.style.display = 'none';
+        clientFoundIcon.style.display = 'none';
+        clientNewIcon.style.display = 'none';
+        clientFeedback.textContent = '';
+        clientSelectionne = false;
+    }
+
+    function selectionnerClient(telephone, nom) {
+        clientTelephone.value = telephone;
+        clientNom.value = nom;
+        clientNom.readOnly = true;
+        clientSearchStatus.style.display = 'flex';
+        clientFoundIcon.style.display = 'inline';
+        clientNewIcon.style.display = 'none';
+        clientFeedback.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Client existant</span>';
+        clientSelectionne = true;
+        hideSuggestions();
+    }
+
+    function afficherSuggestions(clients) {
+        if (!clients.length) {
+            hideSuggestions();
+            return;
+        }
+        clientSuggestions.innerHTML = clients.map(c =>
+            `<button type="button" class="list-group-item list-group-item-action py-2 px-3"
+                     data-tel="${c.telephone}" data-nom="${c.nom_complet}">
+                <i class="bi bi-person me-2 text-muted"></i>
+                <strong>${c.telephone}</strong>
+                <span class="text-muted ms-2">— ${c.nom_complet}</span>
+            </button>`
+        ).join('');
+        clientSuggestions.style.display = 'block';
+
+        clientSuggestions.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', function(e) {
+                e.preventDefault(); // empêche le blur de se déclencher avant le clic
+                selectionnerClient(this.dataset.tel, this.dataset.nom);
+            });
+        });
+    }
+
     clientTelephone.addEventListener('input', function() {
         clearTimeout(searchTimeout);
-        const tel = this.value.trim();
+        const q = this.value.trim();
+        clientSelectionne = false;
 
-        if (tel.length < 6) {
-            clientSearchStatus.style.display = 'none';
-            clientFoundIcon.style.display = 'none';
-            clientNewIcon.style.display = 'none';
-            clientFeedback.textContent = '';
+        if (q.length < 3) {
+            hideSuggestions();
+            resetClientField();
             return;
         }
 
         searchTimeout = setTimeout(() => {
-            fetch(`/clients/api/rechercher/?telephone=${encodeURIComponent(tel)}`)
+            fetch(`/clients/api/suggerer/?q=${encodeURIComponent(q)}`)
                 .then(r => r.json())
                 .then(data => {
-                    clientSearchStatus.style.display = 'flex';
-                    if (data.found) {
-                        clientNom.value = data.nom_complet;
-                        clientNom.readOnly = true;
-                        clientFoundIcon.style.display = 'inline';
-                        clientNewIcon.style.display = 'none';
-                        clientFeedback.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Client existant : ' + data.nom_complet + '</span>';
-                    } else {
-                        clientNom.value = '';
+                    afficherSuggestions(data.clients);
+
+                    // Si aucune suggestion : nouveau client
+                    if (!data.clients.length) {
                         clientNom.readOnly = false;
+                        clientSearchStatus.style.display = 'flex';
                         clientFoundIcon.style.display = 'none';
                         clientNewIcon.style.display = 'inline';
                         clientFeedback.innerHTML = '<span class="text-warning"><i class="bi bi-info-circle me-1"></i>Nouveau client — saisissez le nom</span>';
+                    } else {
+                        clientFeedback.textContent = '';
+                        clientSearchStatus.style.display = 'none';
                     }
                 })
                 .catch(() => {});
-        }, 400);
+        }, 300);
     });
 
-    // Si on efface le téléphone, on déverrouille le nom
-    clientTelephone.addEventListener('blur', function() {
-        if (!this.value.trim()) {
-            clientNom.readOnly = false;
-            clientNom.value = '';
-            clientSearchStatus.style.display = 'none';
-            clientFeedback.textContent = '';
+    // Fermer le dropdown si clic ailleurs
+    document.addEventListener('click', function(e) {
+        if (!clientTelephone.contains(e.target) && !clientSuggestions.contains(e.target)) {
+            hideSuggestions();
         }
+    });
+
+    // Fermer avec Escape
+    clientTelephone.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') hideSuggestions();
+    });
+
+    // Si on efface tout le téléphone, on remet à zéro
+    clientTelephone.addEventListener('blur', function() {
+        if (!this.value.trim()) resetClientField();
     });
 
     // Affichage automatique du montant quand on sélectionne une destination

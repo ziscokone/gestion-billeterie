@@ -75,3 +75,21 @@ def rechercher_client(request):
         })
     except Client.DoesNotExist:
         return JsonResponse({'found': False})
+
+
+@login_required
+def suggerer_clients(request):
+    q = request.GET.get('q', '').strip()
+    if len(q) < 3:
+        return JsonResponse({'clients': []})
+
+    clients = Client.objects.filter(
+        Q(telephone__icontains=q) | Q(nom_complet__icontains=q)
+    ).order_by('telephone')[:6]
+
+    return JsonResponse({
+        'clients': [
+            {'telephone': c.telephone, 'nom_complet': c.nom_complet}
+            for c in clients
+        ]
+    })
