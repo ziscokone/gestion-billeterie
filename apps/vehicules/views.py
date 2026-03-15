@@ -236,6 +236,13 @@ class ReparationVehiculeUpdateView(AdminRequiredMixin, UpdateView):
     form_class = ReparationVehiculeForm
     template_name = 'vehicules/reparation_form.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        reparation = get_object_or_404(ReparationVehicule, pk=kwargs['pk'])
+        if reparation.statut == 'terminee':
+            messages.error(request, "Cette réparation est terminée et ne peut plus être modifiée.")
+            return redirect('vehicules:reparation_detail', pk=reparation.pk)
+        return super().dispatch(request, *args, **kwargs)
+
     def get_success_url(self):
         return reverse_lazy('vehicules:reparation_detail', kwargs={'pk': self.object.pk})
 
@@ -249,6 +256,13 @@ class ReparationVehiculeDeleteView(AdminRequiredMixin, DeleteView):
     model = ReparationVehicule
     template_name = 'vehicules/reparation_confirm_delete.html'
     success_url = reverse_lazy('vehicules:reparation_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        reparation = get_object_or_404(ReparationVehicule, pk=kwargs['pk'])
+        if reparation.statut == 'terminee':
+            messages.error(request, "Cette réparation est terminée et ne peut pas être supprimée.")
+            return redirect('vehicules:reparation_detail', pk=reparation.pk)
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         messages.success(self.request, 'Réparation supprimée avec succès.')

@@ -123,12 +123,14 @@
                                     <a href="{% url 'vehicules:reparation_detail' reparation.pk %}" class="btn btn-outline-primary" title="Voir">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    {% if reparation.statut != 'terminee' %}
                                     <a href="{% url 'vehicules:reparation_update' reparation.pk %}" class="btn btn-outline-warning" title="Modifier">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <a href="{% url 'vehicules:reparation_delete' reparation.pk %}" class="btn btn-outline-danger" title="Supprimer">
                                         <i class="bi bi-trash"></i>
                                     </a>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
