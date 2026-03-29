@@ -314,6 +314,66 @@ def payer_reservation(request, billet_id):
 
 
 @login_required
+def vendre_a_autre_client(request, billet_id):
+    """Réassigne une réservation à un autre client et la marque comme payée."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+
+    billet = get_object_or_404(Billet, pk=billet_id)
+    user = request.user
+
+    if not user.has_global_access and billet.voyage.gare != user.gare:
+        return JsonResponse({'success': False, 'error': 'Accès non autorisé'})
+
+    if billet.statut == 'paye':
+        return JsonResponse({'success': False, 'error': 'Ce billet est déjà payé'})
+
+    client_nom = request.POST.get('client_nom', '').strip()
+    client_telephone = request.POST.get('client_telephone', '').strip()
+    destination_id = request.POST.get('destination_id')
+    moyen_paiement = request.POST.get('moyen_paiement', 'cash')
+
+    if not client_nom or not client_telephone:
+        return JsonResponse({'success': False, 'error': 'Le nom et le téléphone sont obligatoires'})
+
+    if not destination_id:
+        return JsonResponse({'success': False, 'error': 'La destination est obligatoire'})
+
+    try:
+        destination = Destination.objects.get(pk=destination_id, ligne=billet.voyage.ligne)
+    except Destination.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Destination invalide'})
+
+    # Mettre à jour le billet en place
+    billet.client_nom = client_nom
+    billet.client_telephone = client_telephone
+    billet.destination = destination
+    billet.montant = destination.montant
+    billet.statut = 'paye'
+    billet.moyen_paiement = moyen_paiement
+    billet.date_paiement = timezone.now()
+    billet.guichetier = user
+    billet.save(update_fields=[
+        'client_nom', 'client_telephone', 'destination', 'montant',
+        'statut', 'moyen_paiement', 'date_paiement', 'guichetier', 'date_modification'
+    ])
+
+    # Associer ou créer la fiche client
+    client_obj, _ = Client.objects.get_or_create(
+        telephone=client_telephone,
+        defaults={'nom_complet': client_nom}
+    )
+    billet.client = client_obj
+    billet.save(update_fields=['client'])
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Billet vendu au nouveau client',
+        'billet': billet.get_info_impression()
+    })
+
+
+@login_required
 def get_sieges_status(request, voyage_id):
     """Retourne le statut actuel des sièges (pour mise à jour AJAX)."""
     voyage = get_object_or_404(Voyage, pk=voyage_id)
@@ -375,4 +435,28 @@ def get_billet_info(request, billet_id):
     return JsonResponse({
         'success': True,
         'billet': billet.get_info_impression()
+    })
+
+
+@login_required
+def get_destinations_voyage(request, billet_id):
+    """Retourne les destinations disponibles pour le voyage d'un billet."""
+    billet = get_object_or_404(Billet, pk=billet_id)
+    user = request.user
+
+    if not user.has_global_access and billet.voyage.gare != user.gare:
+        return JsonResponse({'success': False, 'error': 'Accès non autorisé'})
+
+    destinations = Destination.objects.filter(
+        ligne=billet.voyage.ligne,
+        gare=billet.voyage.gare,
+        active=True
+    ).order_by('montant')
+
+    return JsonResponse({
+        'success': True,
+        'destinations': [
+            {'id': d.pk, 'ville': d.ville_arrivee, 'montant': str(d.montant)}
+            for d in destinations
+        ]
     })

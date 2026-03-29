@@ -12,6 +12,8 @@ urlpatterns = [
     # API endpoints
     path('api/creer-billet/<int:voyage_id>/', views.creer_billet, name='creer_billet'),
     path('api/payer/<int:billet_id>/', views.payer_reservation, name='payer_reservation'),
+    path('api/vendre-autre/<int:billet_id>/', views.vendre_a_autre_client, name='vendre_a_autre_client'),
     path('api/sieges/<int:voyage_id>/', views.get_sieges_status, name='sieges_status'),
     path('api/billet/<int:billet_id>/', views.get_billet_info, name='billet_info'),
+    path('api/destinations-billet/<int:billet_id>/', views.get_destinations_voyage, name='destinations_billet'),
 ]
