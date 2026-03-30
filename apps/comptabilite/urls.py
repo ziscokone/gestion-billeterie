@@ -8,4 +8,5 @@ urlpatterns = [
     path('rapport/', views.RapportPeriodeView.as_view(), name='rapport_periode'),
     path('rapport-par-gare/', views.RapportParGareView.as_view(), name='rapport_par_gare'),
     path('statistiques/', views.StatistiquesView.as_view(), name='statistiques'),
+    path('performance-chauffeurs/', views.PerformanceChauffeurView.as_view(), name='performance_chauffeurs'),
 ]

@@ -97,6 +97,13 @@
                             </li>
                             {% if user.role in 'pdg,super_admin,manager' %}
                             <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Personnel</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'comptabilite:performance_chauffeurs' %}">
+                                    <i class="bi bi-person-badge me-2"></i> Performance chauffeurs
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">Flotte</h6></li>
                             <li>
                                 <a class="dropdown-item" href="{% url 'vehicules:rentabilite' %}">

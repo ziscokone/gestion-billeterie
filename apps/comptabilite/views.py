@@ -12,8 +12,10 @@ from apps.billets.models import Billet
 from apps.voyages.models import Voyage
 from apps.gares.models import Gare
 from apps.lignes.models import Ligne
-from apps.personnel.models import Utilisateur
+from apps.personnel.models import Utilisateur, Chauffeur
 from apps.comptabilite.models import TypeDepense
+import json
+from datetime import date
 
 
 class PointJournalierView(LoginRequiredMixin, TemplateView):
@@ -582,3 +584,51 @@ class RapportParGareView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
         # Affichage normal
         return super().get(request, *args, **kwargs)
+
+
+class PerformanceChauffeurView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    """Rapport de performance des chauffeurs — comparaison par nombre de voyages."""
+    template_name = 'comptabilite/performance_chauffeurs.html'
+
+    def test_func(self):
+        return self.request.user.role in ['pdg', 'super_admin', 'manager']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = date.today()
+
+        date_debut = self.request.GET.get('date_debut') or date(today.year, 1, 1).strftime('%Y-%m-%d')
+        date_fin   = self.request.GET.get('date_fin')   or today.strftime('%Y-%m-%d')
+        context['date_debut'] = date_debut
+        context['date_fin']   = date_fin
+
+        # Chauffeurs actifs avec leur nombre de voyages sur la période
+        chauffeurs = Chauffeur.objects.filter(actif=True).annotate(
+            nb_voyages=Count(
+                'voyages',
+                filter=Q(
+                    voyages__date_depart__gte=date_debut,
+                    voyages__date_depart__lte=date_fin,
+                )
+            )
+        ).order_by('-nb_voyages')
+
+        context['chauffeurs'] = chauffeurs
+
+        # KPIs globaux
+        total_voyages = sum(c.nb_voyages for c in chauffeurs)
+        nb_actifs     = chauffeurs.count()
+        nb_avec_voyage = chauffeurs.filter(nb_voyages__gt=0).count()
+        meilleur      = chauffeurs.first()
+
+        context['total_voyages']    = total_voyages
+        context['nb_chauffeurs']    = nb_actifs
+        context['nb_avec_voyage']   = nb_avec_voyage
+        context['meilleur']         = meilleur
+
+        # JSON pour le graphique (uniquement ceux avec au moins 1 voyage)
+        chauffeurs_actifs = [c for c in chauffeurs if c.nb_voyages > 0]
+        context['chart_labels_json'] = json.dumps([c.nom_complet for c in chauffeurs_actifs])
+        context['chart_data_json']   = json.dumps([c.nb_voyages for c in chauffeurs_actifs])
+
+        return context
