@@ -374,6 +374,7 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
             types_actifs = TypeReparation.objects.filter(actif=True).order_by('nom')
             types_noms = [t.nom for t in types_actifs]
             context['types_actifs_noms'] = types_noms
+            context['types_actifs_noms_json'] = json.dumps(types_noms)
 
             matrice = []
             for v_stat in vehicules_stats:
@@ -407,6 +408,7 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
             context.setdefault('vehicules_critiques', [])
             context.setdefault('cout_moyen_vehicule', 0)
             context.setdefault('types_actifs_noms', [])
+            context.setdefault('types_actifs_noms_json', '[]')
             context.setdefault('matrice_json', '[]')
 
         return context
