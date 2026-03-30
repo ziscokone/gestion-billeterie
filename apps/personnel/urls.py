@@ -18,6 +18,7 @@ urlpatterns = [
     # Chauffeurs
     path('chauffeurs/', views.ChauffeurListView.as_view(), name='chauffeur_list'),
     path('chauffeurs/ajouter/', views.ChauffeurCreateView.as_view(), name='chauffeur_create'),
+    path('chauffeurs/<int:pk>/', views.ChauffeurDetailView.as_view(), name='chauffeur_detail'),
     path('chauffeurs/<int:pk>/modifier/', views.ChauffeurUpdateView.as_view(), name='chauffeur_update'),
     path('chauffeurs/<int:pk>/supprimer/', views.ChauffeurDeleteView.as_view(), name='chauffeur_delete'),
 

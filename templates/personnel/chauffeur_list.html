@@ -61,6 +61,7 @@
                                 {% endif %}
                             </td>
                             <td class="text-end">
+                                <a href="{% url 'personnel:chauffeur_detail' chauffeur.pk %}" class="btn btn-sm btn-outline-secondary" title="Voir fiche"><i class="bi bi-eye"></i></a>
                                 <a href="{% url 'personnel:chauffeur_update' chauffeur.pk %}" class="btn btn-sm btn-outline-primary" title="Modifier"><i class="bi bi-pencil"></i></a>
                                 <a href="{% url 'personnel:chauffeur_delete' chauffeur.pk %}" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></a>
                             </td>

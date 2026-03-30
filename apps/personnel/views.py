@@ -1,4 +1,4 @@
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.db.models import Q
@@ -6,6 +6,8 @@ from core.mixins import AdminRequiredMixin
 from .models import Utilisateur, Chauffeur, Convoyeur
 from .forms import UtilisateurForm, ChauffeurForm, ConvoyeurForm
 from apps.compagnie.models import Compagnie
+import json
+from datetime import date
 
 
 # Vues pour les utilisateurs
@@ -125,6 +127,65 @@ class ChauffeurDeleteView(AdminRequiredMixin, DeleteView):
     def form_valid(self, form):
         messages.success(self.request, 'Chauffeur supprimé avec succès.')
         return super().form_valid(form)
+
+
+class ChauffeurDetailView(AdminRequiredMixin, DetailView):
+    """Fiche détail d'un chauffeur avec son activité voyages."""
+    model = Chauffeur
+    template_name = 'personnel/chauffeur_detail.html'
+    context_object_name = 'chauffeur'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        chauffeur = self.object
+        today = date.today()
+
+        # Filtres période (défaut : année en cours)
+        date_debut = self.request.GET.get('date_debut') or date(today.year, 1, 1).strftime('%Y-%m-%d')
+        date_fin   = self.request.GET.get('date_fin')   or today.strftime('%Y-%m-%d')
+        context['date_debut'] = date_debut
+        context['date_fin']   = date_fin
+
+        # Tous les voyages du chauffeur
+        tous_voyages = chauffeur.voyages.all()
+
+        # Voyages sur la période filtrée
+        voyages_periode = tous_voyages.filter(
+            date_depart__gte=date_debut,
+            date_depart__lte=date_fin
+        ).select_related('gare', 'ligne', 'vehicule').order_by('-date_depart', '-heure_depart')
+
+        context['voyages']           = voyages_periode
+        context['nb_voyages_periode'] = voyages_periode.count()
+        context['nb_total']           = tous_voyages.count()
+        context['nb_termines']        = voyages_periode.filter(statut='termine').count()
+        context['nb_annules']         = voyages_periode.filter(statut='annule').count()
+
+        # Voyages ce mois
+        debut_mois = today.replace(day=1)
+        context['nb_ce_mois'] = tous_voyages.filter(date_depart__gte=debut_mois).count()
+
+        # Dernier voyage
+        context['dernier_voyage'] = tous_voyages.order_by('-date_depart').first()
+
+        # Graphique : voyages par mois sur les 12 derniers mois
+        mois_labels = []
+        mois_data   = []
+        for i in range(11, -1, -1):
+            month = today.month - i
+            year  = today.year
+            while month <= 0:
+                month += 12
+                year  -= 1
+            debut = date(year, month, 1)
+            fin   = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+            count = tous_voyages.filter(date_depart__gte=debut, date_depart__lt=fin).count()
+            mois_labels.append(debut.strftime('%b %Y'))
+            mois_data.append(count)
+
+        context['chart_labels_json'] = json.dumps(mois_labels)
+        context['chart_data_json']   = json.dumps(mois_data)
+        return context
 
 
 # Vues pour les convoyeurs
