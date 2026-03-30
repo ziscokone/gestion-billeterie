@@ -1,374 +1,617 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}Rapport Analyse Réparations{% endblock %}
+{% block title %}Rapport Réparations Véhicules{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── En-tête ─────────────────────────────────────────── */
+  .rapport-header {
+    background: linear-gradient(135deg, #2d4a7a 0%, var(--color-accent) 100%);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    color: #fff;
+  }
+  .rapport-header h4 { font-weight: 700; margin-bottom: 4px; }
+  .rapport-header .periode-badge {
+    background: rgba(255,255,255,0.18);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 13px;
+    display: inline-block;
+    margin-top: 6px;
+  }
+
+  /* ── Cards stats ─────────────────────────────────────── */
+  .kpi-card {
+    border: none;
+    border-radius: 12px;
+    padding: 20px 22px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    transition: transform 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-card .kpi-icon {
+    font-size: 2.2rem;
+    opacity: 0.22;
+    position: absolute;
+    right: 16px;
+    top: 14px;
+  }
+  .kpi-card .kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
+  .kpi-card .kpi-label { font-size: 12px; opacity: 0.88; margin-top: 4px; }
+  .kpi-blue   { background: linear-gradient(135deg, #2d4a7a, #4A6FA5); }
+  .kpi-orange { background: linear-gradient(135deg, #b45309, #d97706); }
+  .kpi-green  { background: linear-gradient(135deg, #065f46, #059669); }
+  .kpi-purple { background: linear-gradient(135deg, #5b21b6, #7c3aed); }
+
+  /* ── Section cards ───────────────────────────────────── */
+  .section-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    margin-bottom: 24px;
+  }
+  .section-card .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    font-weight: 600;
+    font-size: 14px;
+    color: #2d4a7a;
+    border-radius: 12px 12px 0 0;
+    background: #fff;
+  }
+  .section-card .section-header i { font-size: 16px; margin-right: 8px; }
+
+  /* ── Filtres ─────────────────────────────────────────── */
+  .filter-zone {
+    background: #f8f9fc;
+    border: 1px solid #e8ecf3;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+  }
+  .filter-zone .form-label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
+  .filter-zone .btn-analyser {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 9px 22px;
+  }
+  .filter-zone .btn-analyser:hover { background: var(--color-accent-hover); }
+
+  /* ── Heatmap ─────────────────────────────────────────── */
+  .heatmap-wrapper { overflow-x: auto; }
+  .heatmap-table { border-collapse: separate; border-spacing: 3px; width: 100%; min-width: 700px; }
+  .heatmap-table th {
+    background: #2d4a7a;
+    color: #fff;
+    padding: 9px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .heatmap-table th.th-total { background: #1a2e4a; }
+  .heatmap-table td.td-vehicle {
+    background: #4A6FA5;
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 9px 12px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .heatmap-table td.td-amount {
+    padding: 7px 10px;
+    border-radius: 5px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: default;
+    transition: transform 0.1s, box-shadow 0.1s;
+    white-space: nowrap;
+  }
+  .heatmap-table td.td-amount:hover {
+    transform: scale(1.06);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    z-index: 10;
+    position: relative;
+  }
+  .heatmap-table td.td-total {
+    padding: 9px 12px;
+    border-radius: 5px;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .heat-none     { background: #f0f3f8; color: #aab0bc; font-style: italic; }
+  .heat-low      { background: #d1fae5; color: #065f46; }
+  .heat-mid      { background: #fef3c7; color: #78350f; }
+  .heat-high     { background: #fde8e8; color: #7f1d1d; }
+  .heat-critical { background: #dc3545; color: #fff; font-weight: 700; }
+  .total-row td  { border-top: 2px solid #dee2e6; }
+  .total-row .td-vehicle { background: #1a2e4a; }
+
+  .heatmap-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    font-size: 12px;
+    margin-top: 12px;
+  }
+  .legend-box { width: 16px; height: 16px; border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 4px; }
+
+  /* ── Filtre interactif ───────────────────────────────── */
+  .type-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .type-pill {
+    border: 2px solid #d0d7e6;
+    border-radius: 20px;
+    padding: 5px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .type-pill:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  .type-pill.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+
+  .chart-info-bar {
+    background: #f0f4fb;
+    border: 1px solid #dce5f5;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chart-container { position: relative; height: 280px; }
+
+  /* ── Graphiques types ────────────────────────────────── */
+  .chart-types-container { position: relative; height: 280px; }
+
+  /* ── Alert niveaux ───────────────────────────────────── */
+  .niveau-badge {
+    display: inline-block;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .niveau-critique    { background: #fde8e8; color: #991b1b; }
+  .niveau-surveillance{ background: #fef3c7; color: #78350f; }
+  .niveau-normal      { background: #d1fae5; color: #065f46; }
+
+  /* ── Vide ────────────────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+  }
+  .empty-state i { font-size: 3rem; display: block; margin-bottom: 12px; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-success text-white">
-            <h4 class="mb-0">
-                <i class="bi bi-bar-chart-fill me-2"></i>Analyse des Réparations Véhicules
-            </h4>
-        </div>
 
-        <div class="card-body">
-            <!-- Filtres de période -->
-            <div class="card mb-4 border-primary">
-                <div class="card-header text-white" style="background-color: var(--color-accent);">
-                    <h6 class="mb-0"><i class="bi bi-calendar-range me-2"></i>Période d'analyse</h6>
-                </div>
-                <div class="card-body">
-                    <form method="get" class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Date début</label>
-                            <input type="date" name="date_debut" class="form-control" value="{{ date_debut }}" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Date fin</label>
-                            <input type="date" name="date_fin" class="form-control" value="{{ date_fin }}" required>
-                        </div>
-                        <div class="col-md-3 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search me-1"></i> Analyser
-                            </button>
-                        </div>
-                        <div class="col-md-3 d-flex align-items-end">
-                            <a href="{% url 'vehicules:reparation_list' %}" class="btn btn-outline-secondary w-100">
-                                <i class="bi bi-arrow-left me-1"></i> Retour aux réparations
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Statistiques globales -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Statistiques globales</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-4 mb-3">
-                            <div class="stat-card">
-                                <div class="stat-value" style="font-size: 1.5rem;">{{ cout_total|floatformat:0|intcomma }} F</div>
-                                <div class="stat-label">
-                                    <i class="bi bi-currency-exchange me-1"></i>
-                                    Coût total
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="stat-card">
-                                <div class="stat-value">{{ nb_reparations }}</div>
-                                <div class="stat-label">
-                                    <i class="bi bi-tools me-1"></i>
-                                    Réparations
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="stat-card">
-                                <div class="stat-value">{{ nb_vehicules }}</div>
-                                <div class="stat-label">
-                                    <i class="bi bi-bus-front me-1"></i>
-                                    Véhicules concernés
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tableau comparatif par véhicule -->
-            {% if vehicules_stats %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-table me-2"></i>Comparatif par véhicule</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Véhicule</th>
-                                    <th>Modèle</th>
-                                    <th class="text-center">Nb réparations</th>
-                                    <th class="text-end">Coût total</th>
-                                    <th class="text-end">Coût moyen</th>
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for vehicule_stat in vehicules_stats %}
-                                <tr>
-                                    <td><strong>{{ vehicule_stat.vehicule.immatriculation }}</strong></td>
-                                    <td>{{ vehicule_stat.vehicule.modele.nom }}</td>
-                                    <td class="text-center">
-                                        <span class="badge bg-secondary">{{ vehicule_stat.nb_reparations }}</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <strong>{{ vehicule_stat.cout_total|floatformat:0|intcomma }} F</strong>
-                                    </td>
-                                    <td class="text-end">{{ vehicule_stat.cout_moyen|floatformat:0|intcomma }} F</td>
-                                    <td class="text-center">
-                                        <a href="{% url 'vehicules:vehicule_update' vehicule_stat.vehicule.pk %}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Graphiques par type de réparation -->
-            {% if types_stats %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Analyse par type de réparation</h5>
-                </div>
-                <div class="card-body chart-zone">
-                    <div class="row">
-                        <div class="col-lg-7 mb-3" style="position:relative; height:300px;">
-                            <canvas id="barChartTypes"></canvas>
-                        </div>
-                        <div class="col-lg-5 mb-3" style="position:relative; height:300px;">
-                            <canvas id="doughnutChartTypes"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Détail chiffré par type -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Détail par type de réparation</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for type_stat in types_stats %}
-                        <div class="col-md-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-center p-3 border rounded">
-                                <div>
-                                    <h6 class="mb-0">{{ type_stat.label }}</h6>
-                                </div>
-                                <div class="text-end">
-                                    <strong class="fs-5">{{ type_stat.cout|floatformat:0|intcomma }} F</strong><br>
-                                    <small class="text-muted">{{ type_stat.pourcentage|floatformat:1 }} %</small>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Graphique coût par véhicule -->
-            {% if vehicules_stats %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-bus-front me-2"></i>Coût des réparations par véhicule</h5>
-                </div>
-                <div class="card-body chart-zone" style="position:relative; height:300px;">
-                    <canvas id="barChartVehicules"></canvas>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if not vehicules_stats and not types_stats %}
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                Aucune réparation trouvée pour cette période.
-            </div>
-            {% endif %}
-        </div>
+  <!-- ── En-tête ──────────────────────────────────────────────── -->
+  <div class="rapport-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+    <div>
+      <h4><i class="bi bi-tools me-2"></i>Rapport des Réparations Véhicules</h4>
+      <div class="periode-badge">
+        <i class="bi bi-calendar3 me-1"></i>
+        {{ date_debut }} &rarr; {{ date_fin }}
+      </div>
     </div>
+    <a href="{% url 'vehicules:reparation_list' %}" class="btn btn-sm btn-light fw-semibold">
+      <i class="bi bi-list-ul me-1"></i>Liste des réparations
+    </a>
+  </div>
+
+  <!-- ── Filtres ───────────────────────────────────────────────── -->
+  <div class="filter-zone">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label"><i class="bi bi-calendar-event me-1"></i>Date début</label>
+        <input type="date" name="date_debut" class="form-control form-control-sm" value="{{ date_debut }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label"><i class="bi bi-calendar-event-fill me-1"></i>Date fin</label>
+        <input type="date" name="date_fin" class="form-control form-control-sm" value="{{ date_fin }}" required>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-analyser w-100">
+          <i class="bi bi-search me-1"></i>Analyser
+        </button>
+      </div>
+      <div class="col-md-2">
+        <a href="?date_debut={{ date_debut }}&date_fin={{ date_fin }}" class="btn btn-sm btn-outline-secondary w-100">
+          <i class="bi bi-arrow-clockwise me-1"></i>Réinitialiser
+        </a>
+      </div>
+    </form>
+  </div>
+
+  {% if not vehicules_stats and not types_stats %}
+  <!-- ── État vide ──────────────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="empty-state">
+      <i class="bi bi-search text-muted"></i>
+      <p class="fw-semibold">Aucune réparation trouvée pour cette période.</p>
+      <p class="text-muted small">Modifiez la plage de dates et réessayez.</p>
+    </div>
+  </div>
+
+  {% else %}
+
+  <!-- ── KPI ───────────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-blue">
+        <i class="bi bi-cash-stack kpi-icon"></i>
+        <div class="kpi-value">{{ cout_total|floatformat:0|intcomma }}<small style="font-size:13px"> F</small></div>
+        <div class="kpi-label"><i class="bi bi-currency-exchange me-1"></i>Coût total réparations</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-orange">
+        <i class="bi bi-wrench kpi-icon"></i>
+        <div class="kpi-value">{{ nb_reparations }}</div>
+        <div class="kpi-label"><i class="bi bi-tools me-1"></i>Nombre de réparations</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-green">
+        <i class="bi bi-truck kpi-icon"></i>
+        <div class="kpi-value">{{ nb_vehicules }}</div>
+        <div class="kpi-label"><i class="bi bi-bus-front me-1"></i>Véhicules concernés</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-purple">
+        <i class="bi bi-graph-up kpi-icon"></i>
+        <div class="kpi-value">{{ cout_moyen_vehicule|floatformat:0|intcomma }}<small style="font-size:13px"> F</small></div>
+        <div class="kpi-label"><i class="bi bi-calculator me-1"></i>Coût moyen / véhicule</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Analyse par type ──────────────────────────────────────── -->
+  {% if types_stats %}
+  <div class="section-card">
+    <div class="section-header">
+      <span><i class="bi bi-pie-chart-fill"></i>Analyse par type de réparation</span>
+      <small class="text-muted fw-normal">{{ types_stats|length }} type{{ types_stats|length|pluralize }} actif{{ types_stats|length|pluralize }}</small>
+    </div>
+    <div class="card-body p-4">
+      <div class="row">
+        <div class="col-lg-7 mb-3">
+          <div class="chart-types-container">
+            <canvas id="barChartTypes"></canvas>
+          </div>
+        </div>
+        <div class="col-lg-5 mb-3">
+          <div class="chart-types-container">
+            <canvas id="doughnutChartTypes"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Matrice heatmap ───────────────────────────────────────── -->
+  {% if vehicules_stats %}
+  <div class="section-card">
+    <div class="section-header">
+      <span><i class="bi bi-grid-3x3"></i>Matrice des coûts — Véhicule × Type de réparation</span>
+    </div>
+    <div class="card-body p-4">
+      <div class="heatmap-wrapper">
+        <table class="heatmap-table" id="heatmapTable">
+          <thead>
+            <tr>
+              <th>Véhicule</th>
+              {% for nom in types_actifs_noms %}<th>{{ nom }}</th>{% endfor %}
+              <th class="th-total">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody id="heatmapBody">
+            <!-- Généré par JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="heatmap-legend mt-3">
+        <span class="text-muted fw-semibold me-2" style="font-size:11px">Intensité :</span>
+        <span><span class="legend-box" style="background:#f0f3f8;border:1px solid #ddd"></span>Aucune</span>
+        <span><span class="legend-box" style="background:#d1fae5"></span>&lt; 1M FCFA</span>
+        <span><span class="legend-box" style="background:#fef3c7"></span>1M – 3M FCFA</span>
+        <span><span class="legend-box" style="background:#fde8e8"></span>3M – 6M FCFA</span>
+        <span><span class="legend-box" style="background:#dc3545"></span>&gt; 6M FCFA</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Filtre interactif ─────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span><i class="bi bi-bar-chart-line"></i>Détail par type — Comparaison véhicules</span>
+      <small class="text-muted fw-normal">Cliquer sur un type pour voir la répartition</small>
+    </div>
+    <div class="card-body p-4">
+      <div class="type-pills" id="typePills">
+        <!-- Généré par JS -->
+      </div>
+      <div class="chart-info-bar" id="chartInfoBar">
+        <i class="bi bi-info-circle text-primary"></i>
+        <span>Type : <strong id="infoType">—</strong> &nbsp;|&nbsp; Total : <strong id="infoTotal">—</strong> &nbsp;|&nbsp; <strong id="infoCount">—</strong> véhicule(s)</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="detailChart"></canvas>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}{# fin if vehicules_stats/types_stats #}
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script id="types-data" type="application/json">{{ types_stats_json|safe }}</script>
+<script id="types-data"    type="application/json">{{ types_stats_json|safe }}</script>
 <script id="vehicules-data" type="application/json">{{ vehicules_stats_json|safe }}</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
-        onerror="document.querySelectorAll('.chart-zone').forEach(function(el){el.innerHTML='<p class=text-danger>Erreur: impossible de charger Chart.js (vérifiez votre connexion internet)</p>';})"></script>
+<script id="matrice-data"  type="application/json">{{ matrice_json|safe }}</script>
+<script id="types-noms"    type="application/json">{{ types_actifs_noms|safe }}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 
-    if (typeof Chart === 'undefined') {
-        document.querySelectorAll('.chart-zone').forEach(function(el) {
-            el.innerHTML = '<p class="text-danger text-center py-3">Chart.js non disponible</p>';
-        });
-        return;
-    }
+  /* ── Helpers ─────────────────────────────────────────────────── */
+  function fmt(v) {
+    if (!v || v === 0) return '—';
+    return v.toLocaleString('fr-FR') + ' F';
+  }
+  function fmtM(v) {
+    if (!v || v === 0) return '0';
+    if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+    if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
+    return v.toLocaleString('fr-FR');
+  }
+  function heatClass(v) {
+    if (!v || v === 0) return 'heat-none';
+    if (v > 6000000) return 'heat-critical';
+    if (v > 3000000) return 'heat-high';
+    if (v > 1000000) return 'heat-mid';
+    return 'heat-low';
+  }
+  function barColor(v) {
+    if (!v || v === 0) return 'rgba(200,200,200,0.3)';
+    if (v > 6000000) return 'rgba(220,53,69,0.85)';
+    if (v > 3000000) return 'rgba(253,130,74,0.85)';
+    if (v > 1000000) return 'rgba(253,211,72,0.85)';
+    return 'rgba(16,185,129,0.85)';
+  }
 
-    var couleurs = [
-        '#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0',
-        '#6f42c1', '#fd7e14', '#20c997', '#6610f2', '#d63384',
-        '#495057', '#0b5ed7', '#157347', '#e2a100', '#bb2d3b'
-    ];
+  var COULEURS = [
+    '#4A6FA5','#059669','#d97706','#7c3aed','#dc3545',
+    '#0891b2','#db2777','#65a30d','#ea580c','#6366f1',
+    '#0f766e','#b45309','#9333ea','#16a34a','#e11d48'
+  ];
 
-    function formatFCFA(value) {
-        return value.toLocaleString('fr-FR') + ' F';
-    }
+  /* ── Données ─────────────────────────────────────────────────── */
+  var typesData   = [];
+  var matriceData = [];
+  var typesNoms   = [];
 
-    // --- Graphiques par type de réparation ---
-    var typesData = [];
-    try {
-        typesData = JSON.parse(document.getElementById('types-data').textContent);
-    } catch(e) { console.error('Erreur parsing types:', e); }
+  try { typesData   = JSON.parse(document.getElementById('types-data').textContent);    } catch(e) {}
+  try { matriceData = JSON.parse(document.getElementById('matrice-data').textContent);  } catch(e) {}
+  try { typesNoms   = JSON.parse(document.getElementById('types-noms').textContent);    } catch(e) {}
 
-    if (typesData.length > 0) {
-        var tLabels = typesData.map(function(t) { return t.label; });
-        var tMontants = typesData.map(function(t) { return t.cout; });
-        var tPourcentages = typesData.map(function(t) { return t.pourcentage; });
-        var tCouleurs = couleurs.slice(0, tLabels.length);
+  /* ── Graphiques par type ─────────────────────────────────────── */
+  if (typesData.length > 0) {
+    var tLabels     = typesData.map(function(t) { return t.label; });
+    var tMontants   = typesData.map(function(t) { return t.cout; });
+    var tPourcentages = typesData.map(function(t) { return t.pourcentage; });
+    var tCouleurs   = COULEURS.slice(0, tLabels.length);
 
-        // Barre horizontale
-        var barEl = document.getElementById('barChartTypes');
-        if (barEl) {
-            new Chart(barEl, {
-                type: 'bar',
-                data: {
-                    labels: tLabels,
-                    datasets: [{
-                        label: 'Montant (F CFA)',
-                        data: tMontants,
-                        backgroundColor: tCouleurs,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Coût par type de réparation',
-                            font: { size: 14, weight: 'bold' }
-                        },
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(ctx) { return formatFCFA(ctx.parsed.x); }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(v) { return formatFCFA(v); }
-                            }
-                        }
-                    }
-                }
-            });
+    var barEl = document.getElementById('barChartTypes');
+    if (barEl) {
+      new Chart(barEl, {
+        type: 'bar',
+        data: {
+          labels: tLabels,
+          datasets: [{ label: 'Montant', data: tMontants, backgroundColor: tCouleurs, borderRadius: 5 }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(ctx) { return fmt(ctx.parsed.x); } } }
+          },
+          scales: {
+            x: { beginAtZero: true, ticks: { callback: function(v) { return fmtM(v); }, font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+            y: { ticks: { font: { size: 12 } }, grid: { display: false } }
+          }
         }
-
-        // Doughnut
-        var doughEl = document.getElementById('doughnutChartTypes');
-        if (doughEl) {
-            new Chart(doughEl, {
-                type: 'doughnut',
-                data: {
-                    labels: tLabels,
-                    datasets: [{
-                        data: tPourcentages,
-                        backgroundColor: tCouleurs,
-                        borderWidth: 2,
-                        hoverOffset: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Répartition en pourcentage',
-                            font: { size: 14, weight: 'bold' }
-                        },
-                        legend: {
-                            position: 'bottom',
-                            labels: { padding: 12 }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(ctx) {
-                                    var idx = ctx.dataIndex;
-                                    return ctx.label + ': ' + ctx.parsed.toFixed(1) + '% (' + formatFCFA(tMontants[idx]) + ')';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+      });
     }
 
-    // --- Graphique par véhicule ---
-    var vehData = [];
-    try {
-        vehData = JSON.parse(document.getElementById('vehicules-data').textContent);
-    } catch(e) { console.error('Erreur parsing vehicules:', e); }
-
-    if (vehData.length > 0) {
-        var vLabels = vehData.map(function(v) { return v.label; });
-        var vMontants = vehData.map(function(v) { return v.cout; });
-        var vCouleurs = vehData.map(function(v) {
-            if (v.niveau === 'critique') return '#dc3545';
-            if (v.niveau === 'surveillance') return '#ffc107';
-            return '#198754';
-        });
-
-        var vehEl = document.getElementById('barChartVehicules');
-        if (vehEl) {
-            new Chart(vehEl, {
-                type: 'bar',
-                data: {
-                    labels: vLabels,
-                    datasets: [{
-                        label: 'Coût total (F CFA)',
-                        data: vMontants,
-                        backgroundColor: vCouleurs,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Top véhicules par coût de réparations',
-                            font: { size: 14, weight: 'bold' }
-                        },
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(ctx) { return formatFCFA(ctx.parsed.x); }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(v) { return formatFCFA(v); }
-                            }
-                        }
-                    }
+    var doughEl = document.getElementById('doughnutChartTypes');
+    if (doughEl) {
+      new Chart(doughEl, {
+        type: 'doughnut',
+        data: {
+          labels: tLabels,
+          datasets: [{ data: tPourcentages, backgroundColor: tCouleurs, borderWidth: 2, hoverOffset: 8 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return ctx.label + ' : ' + ctx.parsed.toFixed(1) + '% (' + fmt(tMontants[ctx.dataIndex]) + ')';
                 }
-            });
+              }
+            }
+          }
         }
+      });
     }
+  }
+
+  /* ── Heatmap ─────────────────────────────────────────────────── */
+  var tbody = document.getElementById('heatmapBody');
+  if (tbody && matriceData.length > 0) {
+    // Totaux par type pour la ligne TOTAL
+    var totalParType = {};
+    typesNoms.forEach(function(n) { totalParType[n] = 0; });
+
+    matriceData.forEach(function(row) {
+      var tr = document.createElement('tr');
+      var tdV = document.createElement('td');
+      tdV.className = 'td-vehicle';
+      tdV.textContent = row.label;
+      tr.appendChild(tdV);
+
+      typesNoms.forEach(function(nom) {
+        var v = row.costs[nom] || 0;
+        totalParType[nom] = (totalParType[nom] || 0) + v;
+        var td = document.createElement('td');
+        td.className = 'td-amount ' + heatClass(v);
+        td.textContent = v > 0 ? fmtM(v) : '—';
+        td.title = v > 0 ? v.toLocaleString('fr-FR') + ' FCFA' : 'Aucune réparation';
+        tr.appendChild(td);
+      });
+
+      var tdTotal = document.createElement('td');
+      tdTotal.className = 'td-total ' + heatClass(row.total);
+      tdTotal.textContent = fmtM(row.total);
+      tdTotal.title = row.total.toLocaleString('fr-FR') + ' FCFA';
+      tr.appendChild(tdTotal);
+      tbody.appendChild(tr);
+    });
+
+    // Ligne TOTAL
+    var totalGlobal = matriceData.reduce(function(s, r) { return s + r.total; }, 0);
+    var trTotal = document.createElement('tr');
+    trTotal.className = 'total-row';
+    var tdLbl = document.createElement('td');
+    tdLbl.className = 'td-vehicle';
+    tdLbl.textContent = 'TOTAL';
+    trTotal.appendChild(tdLbl);
+    typesNoms.forEach(function(nom) {
+      var td = document.createElement('td');
+      td.className = 'td-total ' + heatClass(totalParType[nom]);
+      td.textContent = totalParType[nom] > 0 ? fmtM(totalParType[nom]) : '—';
+      td.title = (totalParType[nom] || 0).toLocaleString('fr-FR') + ' FCFA';
+      trTotal.appendChild(td);
+    });
+    var tdTotalGlobal = document.createElement('td');
+    tdTotalGlobal.className = 'td-total heat-critical';
+    tdTotalGlobal.style.background = '#2d4a7a';
+    tdTotalGlobal.style.color = '#fff';
+    tdTotalGlobal.textContent = fmtM(totalGlobal);
+    tdTotalGlobal.title = totalGlobal.toLocaleString('fr-FR') + ' FCFA';
+    trTotal.appendChild(tdTotalGlobal);
+    tbody.appendChild(trTotal);
+  }
+
+  /* ── Filtre interactif ───────────────────────────────────────── */
+  var pillsContainer = document.getElementById('typePills');
+  var detailChartEl  = document.getElementById('detailChart');
+  var infoType       = document.getElementById('infoType');
+  var infoTotal      = document.getElementById('infoTotal');
+  var infoCount      = document.getElementById('infoCount');
+  var detailChart    = null;
+
+  if (pillsContainer && detailChartEl && typesNoms.length > 0 && matriceData.length > 0) {
+
+    function buildChart(typeNom) {
+      var labels  = matriceData.map(function(r) { return r.label; });
+      var values  = matriceData.map(function(r) { return r.costs[typeNom] || 0; });
+      var colors  = values.map(function(v) { return barColor(v); });
+      var total   = values.reduce(function(s, v) { return s + v; }, 0);
+      var count   = values.filter(function(v) { return v > 0; }).length;
+
+      infoType.textContent  = typeNom;
+      infoTotal.textContent = fmt(total);
+      infoCount.textContent = count;
+
+      if (detailChart) { detailChart.destroy(); }
+      detailChart = new Chart(detailChartEl, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: typeNom,
+            data: values,
+            backgroundColor: colors,
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(ctx) { return ctx.raw > 0 ? fmt(ctx.raw) : 'Aucune réparation'; } } }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: {
+              beginAtZero: true,
+              ticks: { callback: function(v) { return fmtM(v); }, font: { size: 11 } },
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            }
+          }
+        }
+      });
+    }
+
+    typesNoms.forEach(function(nom, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'type-pill' + (i === 0 ? ' active' : '');
+      btn.textContent = nom;
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.type-pill').forEach(function(p) { p.classList.remove('active'); });
+        btn.classList.add('active');
+        buildChart(nom);
+      });
+      pillsContainer.appendChild(btn);
+    });
+
+    // Afficher le premier type par défaut
+    buildChart(typesNoms[0]);
+  }
+
 });
 </script>
 {% endblock %}

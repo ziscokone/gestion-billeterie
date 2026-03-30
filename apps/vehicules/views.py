@@ -364,6 +364,35 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
                 for v in vehicules_stats[:10]
             ])
 
+            # Coût moyen par véhicule
+            context['cout_moyen_vehicule'] = (
+                int(context['cout_total'] / context['nb_vehicules'])
+                if context['nb_vehicules'] > 0 else 0
+            )
+
+            # Matrice heatmap : véhicule × type de réparation
+            types_actifs = TypeReparation.objects.filter(actif=True).order_by('nom')
+            types_noms = [t.nom for t in types_actifs]
+            context['types_actifs_noms'] = types_noms
+
+            matrice = []
+            for v_stat in vehicules_stats:
+                vehicule = v_stat['vehicule']
+                reps_veh = reparations.filter(vehicule=vehicule)
+                costs = {}
+                for type_rep in types_actifs:
+                    montant = reps_veh.filter(type_reparation=type_rep).aggregate(
+                        total=Sum('montant')
+                    )['total'] or 0
+                    costs[type_rep.nom] = float(montant)
+                matrice.append({
+                    'label': vehicule.immatriculation,
+                    'costs': costs,
+                    'total': float(v_stat['cout_total']),
+                    'niveau': v_stat['niveau_alerte'],
+                })
+            context['matrice_json'] = json.dumps(matrice)
+
         except Exception as e:
             logger.error(f"Erreur dans RapportReparationsView: {e}", exc_info=True)
             context.setdefault('date_debut', datetime.now().strftime('%Y-%m-%d'))
@@ -376,6 +405,9 @@ class RapportReparationsView(AdminRequiredMixin, TemplateView):
             context.setdefault('types_stats_json', '[]')
             context.setdefault('vehicules_stats_json', '[]')
             context.setdefault('vehicules_critiques', [])
+            context.setdefault('cout_moyen_vehicule', 0)
+            context.setdefault('types_actifs_noms', [])
+            context.setdefault('matrice_json', '[]')
 
         return context
 
