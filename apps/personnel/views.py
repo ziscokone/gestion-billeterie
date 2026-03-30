@@ -77,19 +77,29 @@ class ChauffeurListView(AdminRequiredMixin, ListView):
     context_object_name = 'chauffeurs'
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.GET.get('q')
+        from django.db.models import Count
+        queryset = super().get_queryset().annotate(nb_voyages=Count('voyages'))
+        search  = self.request.GET.get('q')
+        statut  = self.request.GET.get('statut', 'tous')
         if search:
             queryset = queryset.filter(
                 Q(nom_complet__icontains=search) |
                 Q(numero_permis__icontains=search) |
                 Q(telephone__icontains=search)
             )
+        if statut == 'actifs':
+            queryset = queryset.filter(actif=True)
+        elif statut == 'inactifs':
+            queryset = queryset.filter(actif=False)
         return queryset.order_by('nom_complet')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('q', '')
+        context['statut_filtre'] = self.request.GET.get('statut', 'tous')
+        context['nb_total']    = Chauffeur.objects.count()
+        context['nb_actifs']   = Chauffeur.objects.filter(actif=True).count()
+        context['nb_inactifs'] = Chauffeur.objects.filter(actif=False).count()
         return context
 
 
