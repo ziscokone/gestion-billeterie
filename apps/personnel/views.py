@@ -20,17 +20,24 @@ class UtilisateurListView(AdminRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         search = self.request.GET.get('q')
+        role   = self.request.GET.get('role', 'tous')
         if search:
             queryset = queryset.filter(
                 Q(nom_complet__icontains=search) |
                 Q(username__icontains=search) |
                 Q(telephone__icontains=search)
             )
+        if role != 'tous':
+            queryset = queryset.filter(role=role)
         return queryset.select_related('gare').order_by('nom_complet')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('q', '')
+        context['role_filtre']  = self.request.GET.get('role', 'tous')
+        context['nb_total']     = Utilisateur.objects.count()
+        context['nb_actifs']    = Utilisateur.objects.filter(actif=True).count()
+        context['nb_inactifs']  = Utilisateur.objects.filter(actif=False).count()
         return context
 
 
