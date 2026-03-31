@@ -3,261 +3,395 @@
 
 {% block title %}Point du Voyage - {{ voyage.ligne }}{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* ── Bandeau voyage ──────────────────────────────────── */
+  .voyage-banner {
+    background: linear-gradient(135deg, #1e3260 0%, var(--color-accent) 100%);
+    border-radius: 14px; padding: 20px 28px;
+    color: #fff; margin-bottom: 20px;
+    position: relative; overflow: hidden;
+  }
+  .voyage-banner::after {
+    content: '\F4C0'; font-family: 'Bootstrap-Icons';
+    font-size: 8rem; opacity: 0.06;
+    position: absolute; right: 20px; top: -10px; line-height: 1;
+  }
+  .voyage-banner .ligne-title { font-size: 20px; font-weight: 800; letter-spacing: 0.3px; }
+  .voyage-banner .meta-info   { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .voyage-banner .meta-info span { margin-right: 18px; }
+
+  .statut-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 700;
+  }
+  .statut-programme { background: #dbeafe; color: #1e40af; }
+  .statut-en_cours  { background: #fef3c7; color: #92400e; }
+  .statut-termine   { background: #dcfce7; color: #166534; }
+  .statut-annule    { background: #fee2e2; color: #991b1b; }
+
+  .btn-terminer {
+    background: #fff; color: #059669; border: 2px solid rgba(255,255,255,0.5);
+    border-radius: 8px; font-weight: 700; font-size: 12px; padding: 5px 14px;
+    transition: all 0.15s;
+  }
+  .btn-terminer:hover { background: #dcfce7; color: #059669; }
+
+  /* ── Boutons action ──────────────────────────────────── */
+  .actions-bar {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 14px 0; margin-bottom: 18px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .btn-act-primary {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px; border-radius: 9px; font-size: 13px; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.15s; text-decoration: none;
+  }
+  .btn-act-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+  .act-agents  { background: #fef3c7; color: #92400e; }
+  .act-agents:hover { background: #fde68a; color: #78350f; }
+  .act-depenses{ background: #fee2e2; color: #991b1b; }
+  .act-depenses:hover { background: #fecaca; color: #7f1d1d; }
+  .act-bagages { background: #dcfce7; color: #166534; }
+  .act-bagages:hover { background: #bbf7d0; color: #052e16; }
+  .act-vendre  { background: var(--color-accent); color: #fff; }
+  .act-vendre:hover { background: var(--color-accent-hover); color: #fff; }
+
+  .btn-act-secondary {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 9px; font-size: 12px; font-weight: 600;
+    border: 1px solid #e5e7eb; background: #fff; color: #374151;
+    cursor: pointer; transition: all 0.15s; text-decoration: none;
+  }
+  .btn-act-secondary:hover { background: #f3f4f6; color: #111827; border-color: #d1d5db; }
+  .btn-act-retour {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 9px; font-size: 12px; font-weight: 600;
+    background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+    text-decoration: none; transition: all 0.15s; margin-left: auto;
+  }
+  .btn-act-retour:hover { background: #e2e8f0; color: #1e293b; }
+
+  /* ── KPI cards ───────────────────────────────────────── */
+  .kpi-card {
+    border: none; border-radius: 12px; padding: 18px 20px;
+    color: #fff; position: relative; overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.1); transition: transform 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-card .bg-icon { font-size: 4rem; opacity: 0.13; position: absolute; right: 8px; bottom: -8px; line-height: 1; }
+  .kpi-card .kpi-val { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+  .kpi-card .kpi-lbl { font-size: 11px; opacity: 0.85; margin-top: 5px; font-weight: 500; }
+  .kpi-card .kpi-icon { font-size: 1.2rem; margin-bottom: 8px; opacity: 0.9; }
+  .kpi-green  { background: linear-gradient(135deg, #065f46, #059669); }
+  .kpi-yellow { background: linear-gradient(135deg, #78350f, #d97706); }
+  .kpi-blue   { background: linear-gradient(135deg, #1e3260, #4A6FA5); }
+  .kpi-purple { background: linear-gradient(135deg, #4c1d95, #7c3aed); }
+
+  /* ── Table passagers ─────────────────────────────────── */
+  .passagers-card {
+    border: none; border-radius: 13px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden;
+  }
+  .passagers-header {
+    padding: 14px 20px; border-bottom: 1px solid #f0f0f0;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px; background: #fff;
+  }
+  .passagers-header .title {
+    font-weight: 700; font-size: 14px; color: #1e3260;
+  }
+  .pmt-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 12px; padding: 3px 10px; font-size: 11px; font-weight: 600;
+  }
+  .pmt-cash   { background: #f1f5f9; color: #475569; }
+  .pmt-wave   { background: #e0fffe; color: #0e7490; }
+  .pmt-orange { background: #fff7ed; color: #c2410c; }
+  .pmt-mtn    { background: #fefce8; color: #854d0e; }
+  .pmt-moov   { background: #eff6ff; color: #1d4ed8; }
+
+  .pass-table th {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.4px; color: #6b7280;
+    padding: 10px 14px; background: #fafbfc;
+    border-bottom: 1px solid #f0f0f0; position: sticky; top: 0; z-index: 1;
+  }
+  .pass-table td { font-size: 13px; padding: 10px 14px; vertical-align: middle; }
+  .pass-table tbody tr { transition: background 0.1s; }
+  .pass-table tbody tr:hover { background: #f8f9fc; }
+  .pass-table tbody tr:nth-child(even) { background: #fafbfc; }
+  .pass-table tbody tr:nth-child(even):hover { background: #f0f4fb; }
+
+  .siege-badge {
+    background: #1e3260; color: #fff;
+    border-radius: 8px; padding: 3px 10px;
+    font-size: 12px; font-weight: 700; font-family: monospace;
+  }
+  .statut-paye    { background: #dcfce7; color: #166534; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .statut-reserve { background: #fef3c7; color: #92400e; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .statut-reporte { background: #dbeafe; color: #1e40af; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+  .btn-print {
+    width: 30px; height: 30px; border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
+    transition: all 0.15s; cursor: pointer;
+  }
+  .btn-print:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+  .btn-report {
+    width: 30px; height: 30px; border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
+    transition: all 0.15s; cursor: pointer;
+  }
+  .btn-report:hover { background: #fefce8; color: #ca8a04; border-color: #fde047; }
+
+  .pass-table tfoot td {
+    font-weight: 700; background: #f0f4fb;
+    border-top: 2px solid #dce5f5; padding: 11px 14px;
+  }
+
+  .empty-state { text-align: center; padding: 52px 20px; color: #9ca3af; }
+  .empty-state i { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-3">
-    <!-- En-tête avec boutons d'action -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h3 class="mb-1"><i class="bi bi-clipboard-data me-2"></i>Point du Voyage</h3>
-            <p class="text-muted mb-0 small">Récapitulatif des ventes et liste des passagers</p>
+<div class="container-fluid py-3 px-4">
+
+  <!-- ── Bandeau voyage ───────────────────────────────────────── -->
+  <div class="voyage-banner">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <div class="ligne-title">
+          <i class="bi bi-signpost-2 me-2"></i>{{ voyage.ligne.nom }}
         </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#agentsModal">
-                <i class="bi bi-people-fill me-2"></i>Agents du voyage
-            </button>
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#depensesModal">
-                <i class="bi bi-cash-coin me-2"></i>Dépenses
-            </button>
-            {% if user.is_super_admin or user.is_pdg or user.is_chef_gare or user.is_manager %}
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bagagesModal">
-                <i class="bi bi-luggage me-2"></i>Recette Bagages
-            </button>
-            {% endif %}
-            <a href="{% url 'voyages:voyage_bordereau' voyage.pk %}" class="btn btn-primary" target="_blank">
-                <i class="bi bi-file-earmark-text me-2"></i>Voir le Bordereau
-            </a>
-            <a href="{% url 'voyages:voyage_liste_passagers' voyage.pk %}" class="btn btn-success" target="_blank">
-                <i class="bi bi-list-ul me-2"></i>Liste Passagers
-            </a>
-            <a href="{% url 'voyages:voyage_recap_destination' voyage.pk %}" class="btn btn-info" target="_blank">
-                <i class="bi bi-geo-alt me-2"></i>Recap Destination
-            </a>
-            <a href="{% url 'voyages:voyage_list' %}" class="btn btn-danger text-white fw-bold">
-                <i class="bi bi-arrow-left me-2"></i>Retour
-            </a>
+        <div class="meta-info mt-2">
+          <span><i class="bi bi-calendar3 me-1"></i>{{ voyage.date_depart|date:"d/m/Y" }}</span>
+          <span><i class="bi bi-clock me-1"></i>{{ voyage.heure_depart|time:"H:i" }}</span>
+          <span>
+            <i class="bi bi-truck me-1"></i>
+            {% if voyage.vehicule %}{{ voyage.vehicule.immatriculation }}{% else %}<em>Non assigné</em>{% endif %}
+          </span>
+          <span>
+            <i class="bi bi-geo-alt me-1"></i>{{ voyage.gare.nom }}
+          </span>
         </div>
+      </div>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="statut-pill statut-{{ voyage.statut }}">
+          {% if voyage.statut == 'programme' %}<i class="bi bi-clock"></i>
+          {% elif voyage.statut == 'en_cours' %}<i class="bi bi-play-circle"></i>
+          {% elif voyage.statut == 'termine' %}<i class="bi bi-check-circle"></i>
+          {% else %}<i class="bi bi-x-circle"></i>{% endif %}
+          {{ voyage.get_statut_display }}
+        </span>
+        {% if voyage.statut == 'programme' or voyage.statut == 'en_cours' %}
+        <button type="button" class="btn-terminer" id="terminerVoyageBtn">
+          <i class="bi bi-check-circle me-1"></i>Terminer
+        </button>
+        {% endif %}
+        <span style="background:rgba(255,255,255,0.18);border-radius:10px;padding:4px 12px;font-size:11px;font-weight:700">
+          Départ N°{{ voyage.numero_depart }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Barre d'actions ──────────────────────────────────────── -->
+  <div class="actions-bar">
+    <!-- Actions principales -->
+    <button type="button" class="btn-act-primary act-agents"
+            data-bs-toggle="modal" data-bs-target="#agentsModal">
+      <i class="bi bi-people-fill"></i>Agents du voyage
+    </button>
+    <button type="button" class="btn-act-primary act-depenses"
+            data-bs-toggle="modal" data-bs-target="#depensesModal">
+      <i class="bi bi-cash-coin"></i>Dépenses
+    </button>
+    {% if user.is_super_admin or user.is_pdg or user.is_chef_gare or user.is_manager %}
+    <button type="button" class="btn-act-primary act-bagages"
+            data-bs-toggle="modal" data-bs-target="#bagagesModal">
+      <i class="bi bi-luggage"></i>Recette Bagages
+    </button>
+    {% endif %}
+    {% if voyage.get_nb_places_disponibles > 0 and voyage.statut != 'termine' %}
+    <a href="{% url 'guichet:vente' voyage.pk %}" class="btn-act-primary act-vendre">
+      <i class="bi bi-cart-plus"></i>Vendre des billets
+    </a>
+    {% endif %}
+
+    <!-- Actions secondaires -->
+    <a href="{% url 'voyages:voyage_bordereau' voyage.pk %}" class="btn-act-secondary" target="_blank">
+      <i class="bi bi-file-earmark-text"></i>Bordereau
+    </a>
+    <a href="{% url 'voyages:voyage_liste_passagers' voyage.pk %}" class="btn-act-secondary" target="_blank">
+      <i class="bi bi-list-ul"></i>Liste Passagers
+    </a>
+    <a href="{% url 'voyages:voyage_recap_destination' voyage.pk %}" class="btn-act-secondary" target="_blank">
+      <i class="bi bi-geo-alt"></i>Recap Destination
+    </a>
+
+    <!-- Retour -->
+    <a href="{% url 'voyages:voyage_list' %}" class="btn-act-retour">
+      <i class="bi bi-arrow-left"></i>Retour
+    </a>
+  </div>
+
+  <!-- ── KPI cards ────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-green">
+        <i class="bi bi-check-circle kpi-icon"></i>
+        <div class="kpi-val">{{ nb_billets_payes }}</div>
+        <div class="kpi-lbl">Billets Payés</div>
+        <i class="bi bi-check-circle bg-icon"></i>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-yellow">
+        <i class="bi bi-bookmark kpi-icon"></i>
+        <div class="kpi-val">{{ nb_billets_reserves }}</div>
+        <div class="kpi-lbl">Réservations</div>
+        <i class="bi bi-bookmark bg-icon"></i>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-blue">
+        <i class="bi bi-people kpi-icon"></i>
+        <div class="kpi-val">
+          {{ billets.count }}{% if voyage.vehicule %}<span style="font-size:1rem;opacity:0.7">/{{ voyage.vehicule.modele.capacite }}</span>{% endif %}
+        </div>
+        <div class="kpi-lbl">Total Passagers</div>
+        <i class="bi bi-people bg-icon"></i>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-purple">
+        <i class="bi bi-cash-stack kpi-icon"></i>
+        <div class="kpi-val" style="font-size:1.4rem">{{ montant_total|format_montant }}<small style="font-size:12px"> F</small></div>
+        <div class="kpi-lbl">Recette totale</div>
+        <i class="bi bi-cash-stack bg-icon"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Liste des passagers ───────────────────────────────────── -->
+  <div class="passagers-card">
+    <div class="passagers-header">
+      <div class="title"><i class="bi bi-ticket-perforated me-2" style="color:var(--color-accent)"></i>Liste des Passagers</div>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        {% if paiements_cash > 0 %}<span class="pmt-badge pmt-cash"><i class="bi bi-cash"></i>Cash: {{ paiements_cash }}</span>{% endif %}
+        {% if paiements_wave > 0 %}<span class="pmt-badge pmt-wave"><i class="bi bi-phone"></i>Wave: {{ paiements_wave }}</span>{% endif %}
+        {% if paiements_orange > 0 %}<span class="pmt-badge pmt-orange"><i class="bi bi-phone"></i>Orange: {{ paiements_orange }}</span>{% endif %}
+        {% if paiements_mtn > 0 %}<span class="pmt-badge pmt-mtn"><i class="bi bi-phone"></i>MTN: {{ paiements_mtn }}</span>{% endif %}
+        {% if paiements_moov > 0 %}<span class="pmt-badge pmt-moov"><i class="bi bi-phone"></i>Moov: {{ paiements_moov }}</span>{% endif %}
+        <span style="background:#eef2ff;color:#4338ca;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700">
+          {{ nb_billets_payes }} Payés
+        </span>
+        <span style="background:#fef3c7;color:#92400e;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700">
+          {{ nb_billets_reserves }} Réservés
+        </span>
+      </div>
     </div>
 
-    <!-- Informations du voyage -->
-    <div class="card mb-3">
-        <div class="card-header bg-primary text-white py-2">
-            <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Informations du Voyage</h6>
-        </div>
-        <div class="card-body py-2">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="text-muted small mb-1">Ligne</label>
-                    <div class="fw-semibold">
-                        <i class="bi bi-signpost-2 me-1"></i>{{ voyage.ligne.nom }}
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="text-muted small mb-1">Date et Heure</label>
-                    <div class="fw-semibold">
-                        <i class="bi bi-calendar3 me-1"></i>{{ voyage.date_depart|date:"d/m/Y" }}
-                        <i class="bi bi-clock ms-2 me-1"></i>{{ voyage.heure_depart|time:"H:i" }}
-                        <span class="badge bg-secondary ms-1">Départ N°{{ voyage.numero_depart }}</span>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="text-muted small mb-1">Véhicule</label>
-                    <div class="fw-semibold">
-                        {% if voyage.vehicule %}
-                            <i class="bi bi-truck me-1"></i>{{ voyage.vehicule.immatriculation }}
-                        {% else %}
-                            <span class="text-muted">Non assigné</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="text-muted small mb-1">Statut</label>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge
-                            {% if voyage.statut == 'programme' %}bg-info
-                            {% elif voyage.statut == 'en_cours' %}bg-warning
-                            {% elif voyage.statut == 'termine' %}bg-success
-                            {% else %}bg-secondary{% endif %}">
-                            {{ voyage.get_statut_display }}
-                        </span>
-                        {% if voyage.statut == 'programme' or voyage.statut == 'en_cours' %}
-                        <button type="button" class="btn btn-sm btn-success" id="terminerVoyageBtn" title="Terminer ce départ">
-                            <i class="bi bi-check-circle me-1"></i>Terminer
-                        </button>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
+    {% if billets %}
+    <div class="table-responsive">
+      <table class="table pass-table mb-0">
+        <thead>
+          <tr>
+            <th style="width:46px" class="text-center">N°</th>
+            <th>Passager</th>
+            <th>Téléphone</th>
+            <th class="text-center" style="width:70px">Siège</th>
+            <th>Destination</th>
+            <th class="text-end">Montant</th>
+            <th class="text-center" style="width:130px">Statut</th>
+            <th class="text-center" style="width:70px">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for billet in billets %}
+          <tr>
+            <td class="text-center text-muted" style="font-size:12px">{{ forloop.counter }}</td>
+            <td><strong>{{ billet.client_nom }}</strong></td>
+            <td><i class="bi bi-telephone me-1 text-muted"></i>{{ billet.client_telephone }}</td>
+            <td class="text-center">
+              <span class="siege-badge">{{ billet.numero_siege }}</span>
+            </td>
+            <td>
+              <i class="bi bi-geo-alt me-1 text-muted"></i>
+              {% if billet.destination %}{{ billet.destination.ville_arrivee }}
+              {% else %}{{ voyage.ligne.ville_arrivee }}{% endif %}
+            </td>
+            <td class="text-end fw-semibold">{{ billet.montant|format_montant }} F</td>
+            <td class="text-center">
+              {% if billet.statut == 'paye' %}
+                <span class="statut-paye">Payé</span>
+                <span class="pmt-badge mt-1
+                  {% if billet.moyen_paiement == 'cash' %}pmt-cash
+                  {% elif billet.moyen_paiement == 'wave' %}pmt-wave
+                  {% elif billet.moyen_paiement == 'orange_money' %}pmt-orange
+                  {% elif billet.moyen_paiement == 'mtn_money' %}pmt-mtn
+                  {% elif billet.moyen_paiement == 'moov_money' %}pmt-moov
+                  {% else %}pmt-cash{% endif %}" style="font-size:10px">
+                  {% if billet.moyen_paiement == 'cash' %}Cash
+                  {% elif billet.moyen_paiement == 'wave' %}Wave
+                  {% elif billet.moyen_paiement == 'orange_money' %}Orange
+                  {% elif billet.moyen_paiement == 'mtn_money' %}MTN
+                  {% elif billet.moyen_paiement == 'moov_money' %}Moov
+                  {% else %}Cash{% endif %}
+                </span>
+              {% elif billet.statut == 'reporte' %}
+                <span class="statut-reporte"><i class="bi bi-arrow-repeat me-1"></i>Reporté</span>
+              {% else %}
+                <span class="statut-reserve"><i class="bi bi-bookmark me-1"></i>Réservé</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <div class="d-flex gap-1 justify-content-center">
+                <button type="button" class="btn-print btn-reprint"
+                        data-billet-id="{{ billet.pk }}" title="Réimprimer (Duplicata)">
+                  <i class="bi bi-printer"></i>
+                </button>
+                {% if billet.statut == 'paye' and voyage.statut != 'termine' %}
+                <button type="button" class="btn-report btn-reporter"
+                        data-billet-id="{{ billet.pk }}"
+                        data-billet-numero="{{ billet.numero }}"
+                        data-client-nom="{{ billet.client_nom }}"
+                        data-client-telephone="{{ billet.client_telephone }}"
+                        data-siege="{{ billet.numero_siege }}"
+                        data-montant="{{ billet.montant }}"
+                        title="Reporter ce billet">
+                  <i class="bi bi-arrow-repeat"></i>
+                </button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="text-end fw-bold">TOTAL RECETTE :</td>
+            <td class="text-end fw-bold" style="color:var(--color-accent);font-size:15px">
+              {{ montant_total|format_montant }} FCFA
+            </td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-inbox text-muted"></i>
+      <p class="fw-semibold">Aucun billet vendu pour ce voyage</p>
+    </div>
+    {% endif %}
+  </div>
 
-    <!-- Statistiques -->
-    <div class="row g-3 mb-3">
-        <div class="col-md-3">
-            <div class="card text-center border-success">
-                <div class="card-body py-2">
-                    <div class="d-flex align-items-center justify-content-center gap-2">
-                        <i class="bi bi-check-circle text-success fs-4"></i>
-                        <span class="fs-4 fw-bold text-success">{{ nb_billets_payes }}</span>
-                    </div>
-                    <small class="text-muted d-block mt-1">Billets Payés</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center border-warning">
-                <div class="card-body py-2">
-                    <div class="d-flex align-items-center justify-content-center gap-2">
-                        <i class="bi bi-bookmark text-warning fs-4"></i>
-                        <span class="fs-4 fw-bold text-warning">{{ nb_billets_reserves }}</span>
-                    </div>
-                    <small class="text-muted d-block mt-1">Réservations</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center border-info">
-                <div class="card-body py-2">
-                    <div class="d-flex align-items-center justify-content-center gap-2">
-                        <i class="bi bi-people text-info fs-4"></i>
-                        <span class="fs-4 fw-bold text-info">
-                            {{ billets.count }}{% if voyage.vehicule %}/{{ voyage.vehicule.modele.capacite }}{% endif %}
-                        </span>
-                    </div>
-                    <small class="text-muted d-block mt-1">Total Passagers</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center border-primary">
-                <div class="card-body py-2">
-                    <div class="d-flex align-items-center justify-content-center gap-2">
-                        <i class="bi bi-cash-stack text-primary fs-4"></i>
-                        <span class="fs-5 fw-bold text-primary">{{ montant_total|format_montant }}</span>
-                    </div>
-                    <small class="text-muted d-block mt-1">Recette (FCFA)</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Liste des billets vendus -->
-    <div class="card">
-        <div class="card-header bg-white py-2">
-            <div class="d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="bi bi-ticket-perforated me-2"></i>Liste des Passagers ({{ billets.count }})</h6>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    {% if paiements_cash > 0 %}<span class="badge me-1" style="background-color: #6c757d;">Cash: {{ paiements_cash }}</span>{% endif %}
-                    {% if paiements_wave > 0 %}<span class="badge me-1" style="background-color: #00CED1;">Wave: {{ paiements_wave }}</span>{% endif %}
-                    {% if paiements_orange > 0 %}<span class="badge me-1" style="background-color: #FF6600;">Orange: {{ paiements_orange }}</span>{% endif %}
-                    {% if paiements_mtn > 0 %}<span class="badge me-1" style="background-color: #FFCC00; color: #000;">MTN: {{ paiements_mtn }}</span>{% endif %}
-                    {% if paiements_moov > 0 %}<span class="badge me-1" style="background-color: #003366;">Moov: {{ paiements_moov }}</span>{% endif %}
-                    <span class="badge bg-success me-1">{{ nb_billets_payes }} Payés</span>
-                    <span class="badge bg-warning">{{ nb_billets_reserves }} Réservés</span>
-                    {% if voyage.get_nb_places_disponibles > 0 and voyage.statut != 'termine' %}
-                    <a href="{% url 'guichet:vente' voyage.pk %}" class="btn btn-sm btn-primary">
-                        <i class="bi bi-cart-plus me-1"></i>Vendre des billets
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            {% if billets %}
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0">
-                        <thead class="table-light sticky-top">
-                            <tr>
-                                <th class="text-center" style="width: 50px;">N°</th>
-                                <th>Nom du Passager</th>
-                                <th>Téléphone</th>
-                                <th class="text-center" style="width: 80px;">Siège</th>
-                                <th>Destination</th>
-                                <th class="text-end">Montant</th>
-                                <th class="text-center" style="width: 100px;">Statut</th>
-                                <th class="text-center" style="width: 80px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for billet in billets %}
-                            <tr>
-                                <td class="text-center">{{ forloop.counter }}</td>
-                                <td><strong>{{ billet.client_nom }}</strong></td>
-                                <td><i class="bi bi-telephone me-1"></i>{{ billet.client_telephone }}</td>
-                                <td class="text-center">
-                                    <span class="badge bg-dark">{{ billet.numero_siege }}</span>
-                                </td>
-                                <td>
-                                    <i class="bi bi-geo-alt me-1"></i>
-                                    {% if billet.destination %}
-                                        {{ billet.destination.ville_arrivee }}
-                                    {% else %}
-                                        {{ voyage.ligne.ville_arrivee }}
-                                    {% endif %}
-                                </td>
-                                <td class="text-end"><strong>{{ billet.montant|format_montant }} FCFA</strong></td>
-                                <td class="text-center">
-                                    {% if billet.statut == 'paye' %}
-                                        <span class="badge bg-success">Payé</span>
-                                        {% if billet.moyen_paiement == 'cash' %}
-                                            <span class="badge" style="background-color: #6c757d;">Cash</span>
-                                        {% elif billet.moyen_paiement == 'wave' %}
-                                            <span class="badge" style="background-color: #00CED1;">Wave</span>
-                                        {% elif billet.moyen_paiement == 'orange_money' %}
-                                            <span class="badge" style="background-color: #FF6600;">Orange</span>
-                                        {% elif billet.moyen_paiement == 'mtn_money' %}
-                                            <span class="badge" style="background-color: #FFCC00; color: #000;">MTN</span>
-                                        {% elif billet.moyen_paiement == 'moov_money' %}
-                                            <span class="badge" style="background-color: #003366;">Moov</span>
-                                        {% endif %}
-                                    {% elif billet.statut == 'reporte' %}
-                                        <span class="badge bg-info">
-                                            <i class="bi bi-arrow-repeat me-1"></i>Reporté
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-warning">Réservé</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-center">
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-primary btn-reprint"
-                                            data-billet-id="{{ billet.pk }}"
-                                            title="Réimprimer (Duplicata)">
-                                        <i class="bi bi-printer"></i>
-                                    </button>
-                                    {% if billet.statut == 'paye' and voyage.statut != 'termine' %}
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-warning btn-reporter"
-                                            data-billet-id="{{ billet.pk }}"
-                                            data-billet-numero="{{ billet.numero }}"
-                                            data-client-nom="{{ billet.client_nom }}"
-                                            data-client-telephone="{{ billet.client_telephone }}"
-                                            data-siege="{{ billet.numero_siege }}"
-                                            data-montant="{{ billet.montant }}"
-                                            title="Reporter ce billet">
-                                        <i class="bi bi-arrow-repeat"></i>
-                                    </button>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                        <tfoot class="table-light">
-                            <tr>
-                                <td colspan="5" class="text-end"><strong>TOTAL RECETTE :</strong></td>
-                                <td class="text-end"><strong class="text-primary fs-5">{{ montant_total|format_montant }} FCFA</strong></td>
-                                <td colspan="2"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            {% else %}
-                <div class="text-center py-5">
-                    <i class="bi bi-inbox" style="font-size: 3rem; color: var(--color-text-muted);"></i>
-                    <p class="mt-3 text-muted">Aucun billet vendu pour ce voyage.</p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
 </div>
 
 <!-- Modal d'impression duplicata -->
