@@ -69,6 +69,13 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header">Comptabilité</h6></li>
+                            {% if user.role in 'pdg,super_admin,manager' %}
+                            <li>
+                                <a class="dropdown-item" href="{% url 'comptabilite:bilan_mensuel' %}">
+                                    <i class="bi bi-calendar2-check me-2"></i> Bilan mensuel
+                                </a>
+                            </li>
+                            {% endif %}
                             <li>
                                 <a class="dropdown-item" href="{% url 'comptabilite:rapport_periode' %}">
                                     <i class="bi bi-calendar-range me-2"></i> Rapport période

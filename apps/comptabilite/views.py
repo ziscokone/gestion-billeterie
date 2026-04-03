@@ -13,7 +13,7 @@ from apps.voyages.models import Voyage
 from apps.gares.models import Gare
 from apps.lignes.models import Ligne
 from apps.personnel.models import Utilisateur, Chauffeur
-from apps.comptabilite.models import TypeDepense
+from apps.comptabilite.models import TypeDepense, Depense
 import json
 from datetime import date
 
@@ -631,4 +631,139 @@ class PerformanceChauffeurView(LoginRequiredMixin, UserPassesTestMixin, Template
         context['chart_labels_json'] = json.dumps([c.nom_complet for c in chauffeurs_actifs])
         context['chart_data_json']   = json.dumps([c.nb_voyages for c in chauffeurs_actifs])
 
+        return context
+
+
+class BilanMensuelView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    """Bilan mensuel par gare : voyages, billets, recettes, dépenses, bénéfice net."""
+    template_name = 'comptabilite/bilan_mensuel.html'
+
+    def test_func(self):
+        return self.request.user.role in ['pdg', 'super_admin', 'manager']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Liste de tous les mois ayant des voyages, du plus récent au plus ancien
+        mois_disponibles = (
+            Voyage.objects
+            .dates('date_depart', 'month', order='DESC')
+        )
+        context['mois_disponibles'] = mois_disponibles
+
+        # Mois sélectionné (paramètre ?mois=2026-03)
+        mois_str = self.request.GET.get('mois')
+        mois_selectionne = None
+
+        if mois_str:
+            try:
+                mois_selectionne = datetime.strptime(mois_str, '%Y-%m').date()
+            except ValueError:
+                pass
+
+        if not mois_selectionne:
+            premier = list(mois_disponibles[:1])
+            if premier:
+                mois_selectionne = premier[0]
+
+        if not mois_selectionne:
+            return context
+
+        annee = mois_selectionne.year
+        mois  = mois_selectionne.month
+
+        context['mois_selectionne'] = mois_selectionne
+
+        # Gares ayant des voyages ce mois
+        gares = Gare.objects.filter(
+            voyages__date_depart__year=annee,
+            voyages__date_depart__month=mois
+        ).distinct().order_by('nom')
+
+        # Filtre réparation (réutilisé pour chaque gare)
+        filtre_reparation = (
+            Q(type_depense__code='reparation') |
+            Q(type_depense__nom__icontains='réparation') |
+            Q(type_depense__nom__icontains='reparation')
+        )
+
+        bilan_gares = []
+        totaux = {
+            'nb_voyages': 0,
+            'nb_billets_payes': 0,
+            'nb_billets_reportes': 0,
+            'recettes_billets': Decimal('0'),
+            'recettes_bagages': Decimal('0'),
+            'recettes_totales': Decimal('0'),
+            'depenses_exploitation': Decimal('0'),
+            'depenses_reparations': Decimal('0'),
+            'total_depenses': Decimal('0'),
+            'benefice_net': Decimal('0'),
+        }
+
+        for gare in gares:
+            voyage_ids = list(
+                Voyage.objects.filter(
+                    gare=gare,
+                    date_depart__year=annee,
+                    date_depart__month=mois
+                ).values_list('id', flat=True)
+            )
+
+            billets_gare   = Billet.objects.filter(voyage_id__in=voyage_ids)
+            depenses_gare  = Depense.objects.filter(voyage_id__in=voyage_ids)
+            voyages_gare_qs = Voyage.objects.filter(id__in=voyage_ids)
+
+            nb_voyages          = len(voyage_ids)
+            nb_billets_payes    = billets_gare.filter(statut='paye').count()
+            nb_billets_reportes = billets_gare.filter(statut='reporte').count()
+
+            recettes_billets = (
+                billets_gare.filter(statut='paye')
+                .aggregate(t=Sum('montant'))['t'] or Decimal('0')
+            )
+            recettes_bagages = (
+                voyages_gare_qs
+                .aggregate(t=Sum('recette_bagages'))['t'] or Decimal('0')
+            )
+            recettes_totales = recettes_billets + recettes_bagages
+
+            depenses_reparations = (
+                depenses_gare.filter(filtre_reparation)
+                .aggregate(t=Sum('montant'))['t'] or Decimal('0')
+            )
+            depenses_exploitation = (
+                depenses_gare.exclude(filtre_reparation)
+                .aggregate(t=Sum('montant'))['t'] or Decimal('0')
+            )
+            total_depenses = depenses_exploitation + depenses_reparations
+            benefice_net   = recettes_totales - total_depenses
+
+            bilan_gares.append({
+                'gare': gare,
+                'nb_voyages': nb_voyages,
+                'nb_billets_payes': nb_billets_payes,
+                'nb_billets_reportes': nb_billets_reportes,
+                'recettes_billets': recettes_billets,
+                'recettes_bagages': recettes_bagages,
+                'recettes_totales': recettes_totales,
+                'depenses_exploitation': depenses_exploitation,
+                'depenses_reparations': depenses_reparations,
+                'total_depenses': total_depenses,
+                'benefice_net': benefice_net,
+            })
+
+            totaux['nb_voyages']           += nb_voyages
+            totaux['nb_billets_payes']     += nb_billets_payes
+            totaux['nb_billets_reportes']  += nb_billets_reportes
+            totaux['recettes_billets']     += recettes_billets
+            totaux['recettes_bagages']     += recettes_bagages
+            totaux['recettes_totales']     += recettes_totales
+            totaux['depenses_exploitation']+= depenses_exploitation
+            totaux['depenses_reparations'] += depenses_reparations
+            totaux['total_depenses']       += total_depenses
+            totaux['benefice_net']         += benefice_net
+
+        context['bilan_gares'] = bilan_gares
+        context['totaux']      = totaux
         return context
