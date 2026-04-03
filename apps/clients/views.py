@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.views.generic import DetailView, ListView
@@ -42,9 +43,12 @@ class ClientDetailView(LoginRequiredMixin, DetailView):
             'voyage', 'voyage__gare', 'voyage__ligne', 'destination'
         ).order_by('-date_creation')
 
-        context['billets'] = billets
         context['nb_voyages'] = billets.count()
         context['nb_payes'] = billets.filter(statut='paye').count()
+
+        paginator = Paginator(billets, 10)
+        page_number = self.request.GET.get('page', 1)
+        context['billets'] = paginator.get_page(page_number)
 
         context['gares_frequentes'] = (
             billets.values('voyage__gare__nom')

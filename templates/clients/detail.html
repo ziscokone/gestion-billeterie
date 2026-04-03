@@ -163,6 +163,53 @@
                     </div>
                     {% endif %}
                 </div>
+                {% if billets.paginator.num_pages > 1 %}
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        Page {{ billets.number }} sur {{ billets.paginator.num_pages }}
+                        &mdash; {{ nb_voyages }} billet{{ nb_voyages|pluralize }} au total
+                    </small>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if billets.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ billets.previous_page_number }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                            </li>
+                            {% endif %}
+
+                            {% for num in billets.paginator.page_range %}
+                                {% if num == billets.number %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num >= billets.number|add:"-2" and num <= billets.number|add:"2" %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if billets.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ billets.next_page_number }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
