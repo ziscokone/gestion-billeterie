@@ -1,109 +1,183 @@
 {% load humanize %}
 
-<!-- Section Statistiques -->
-<div class="card mb-4 border-info">
-    <div class="card-header bg-info bg-opacity-10">
-        <h5 class="mb-0 text-info">
-            <i class="bi bi-bar-chart-fill me-2"></i>Statistiques
-        </h5>
+<style>
+/* ── Stats réparations ────────────────────────────────── */
+.rep-stat-card {
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    padding: 16px;
+    text-align: center;
+    background: #fff;
+    transition: box-shadow 0.15s;
+}
+.rep-stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.rep-stat-val { font-size: 1.5rem; font-weight: 700; line-height: 1; margin-top: 8px; }
+.rep-stat-lbl { font-size: 11px; color: #6b7280; margin-top: 4px; }
+
+/* ── Items réparations ────────────────────────────────── */
+.rep-item {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: box-shadow 0.15s;
+    display: flex;
+}
+.rep-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+/* Bande colorée gauche selon statut */
+.rep-item .rep-stripe { width: 5px; flex-shrink: 0; }
+.rep-stripe.terminee  { background: var(--color-success); }
+.rep-stripe.en_cours  { background: var(--color-warning); }
+.rep-stripe.en_attente { background: var(--color-accent); }
+
+.rep-item .rep-body { padding: 14px 16px; flex: 1; }
+
+.rep-type-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 12px; padding: 3px 10px;
+    font-size: 11px; font-weight: 600;
+    background: #eef2ff; color: #3730a3;
+}
+.rep-statut {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 12px; padding: 3px 10px;
+    font-size: 11px; font-weight: 600;
+}
+.rep-statut.terminee  { background: #dcfce7; color: #166534; }
+.rep-statut.en_cours  { background: #fef3c7; color: #92400e; }
+.rep-statut.en_attente { background: #dbeafe; color: #1e40af; }
+
+.rep-montant {
+    font-size: 1rem; font-weight: 700; color: var(--color-accent);
+    white-space: nowrap;
+}
+
+/* Boutons action */
+.btn-action-sm {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; border: 1px solid #e5e7eb;
+    background: #fff; color: #6b7280;
+    transition: all 0.15s; text-decoration: none;
+}
+.btn-action-sm:hover             { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.btn-action-sm.view:hover  { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.btn-action-sm.edit:hover  { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.btn-action-sm.del:hover   { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+</style>
+
+<!-- ── Statistiques ──────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="rep-stat-card">
+            <i class="bi bi-currency-exchange text-primary" style="font-size:1.8rem;"></i>
+            <div class="rep-stat-val text-primary">{{ vehicule.get_cout_total_reparations|floatformat:0|intcomma }}</div>
+            <div class="rep-stat-lbl">Coût total (FCFA)</div>
+        </div>
     </div>
-    <div class="card-body">
-        <div class="row text-center">
-            <div class="col-md-4 mb-3">
-                <div class="card border-primary">
-                    <div class="card-body">
-                        <i class="bi bi-currency-exchange text-primary" style="font-size: 2rem;"></i>
-                        <h3 class="mt-2 mb-0 text-primary">{{ vehicule.get_cout_total_reparations|floatformat:0|intcomma }} F</h3>
-                        <p class="text-muted mb-0">Coût total</p>
-                    </div>
-                </div>
+    <div class="col-md-4">
+        <div class="rep-stat-card">
+            <i class="bi bi-tools" style="font-size:1.8rem;color:var(--color-warning);"></i>
+            <div class="rep-stat-val" style="color:var(--color-warning);">{{ vehicule.get_nombre_reparations }}</div>
+            <div class="rep-stat-lbl">Réparations totales</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="rep-stat-card">
+            <i class="bi bi-calendar-event" style="font-size:1.8rem;color:var(--color-success);"></i>
+            <div class="rep-stat-val" style="color:var(--color-success);font-size:1.1rem;">
+                {% if vehicule.get_derniere_reparation %}
+                    {{ vehicule.get_derniere_reparation.date_reparation|date:"d/m/Y" }}
+                {% else %}
+                    —
+                {% endif %}
             </div>
-            <div class="col-md-4 mb-3">
-                <div class="card border-warning">
-                    <div class="card-body">
-                        <i class="bi bi-tools text-warning" style="font-size: 2rem;"></i>
-                        <h3 class="mt-2 mb-0 text-warning">{{ vehicule.get_nombre_reparations }}</h3>
-                        <p class="text-muted mb-0">Réparations</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <div class="card border-success">
-                    <div class="card-body">
-                        <i class="bi bi-calendar-event text-success" style="font-size: 2rem;"></i>
-                        <h3 class="mt-2 mb-0 text-success">
-                            {% if vehicule.get_derniere_reparation %}
-                                {{ vehicule.get_derniere_reparation.date_reparation|date:"d/m/Y" }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </h3>
-                        <p class="text-muted mb-0">Dernière réparation</p>
-                    </div>
-                </div>
-            </div>
+            <div class="rep-stat-lbl">Dernière réparation</div>
         </div>
     </div>
 </div>
 
-<!-- Section Liste des réparations -->
+<!-- ── En-tête liste ─────────────────────────────────────── -->
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="mb-0">
-        <i class="bi bi-list-ul me-2"></i>Liste des réparations
-    </h5>
-    <a href="{% url 'vehicules:reparation_create' %}?vehicule={{ vehicule.pk }}" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-circle me-1"></i>Ajouter une réparation
+    <h6 class="mb-0 fw-bold" style="color:#1e3260;">
+        <i class="bi bi-list-ul me-2"></i>Historique des réparations
+    </h6>
+    <a href="{% url 'vehicules:reparation_create' %}?vehicule={{ vehicule.pk }}"
+       class="btn btn-sm btn-primary fw-bold">
+        <i class="bi bi-plus-circle me-1"></i>Ajouter
     </a>
 </div>
 
+<!-- ── Liste ─────────────────────────────────────────────── -->
 {% if vehicule.reparations.all %}
-<div class="list-group">
-    {% for reparation in vehicule.reparations.all %}
-    <div class="list-group-item">
-        <div class="d-flex w-100 justify-content-between align-items-start">
-            <div>
-                <h6 class="mb-1">
-                    <i class="bi bi-calendar3 me-1"></i>{{ reparation.date_reparation|date:"d/m/Y" }}
-                    <span class="badge bg-secondary ms-2">{{ reparation.type_reparation.nom }}</span>
-                    {% if reparation.statut == 'terminee' %}
-                        <span class="badge bg-success ms-1"><i class="bi bi-check-circle"></i> Terminée</span>
-                    {% elif reparation.statut == 'en_cours' %}
-                        <span class="badge bg-warning text-dark ms-1"><i class="bi bi-hourglass-split"></i> En cours</span>
-                    {% else %}
-                        <span class="badge bg-info ms-1"><i class="bi bi-clock"></i> En attente</span>
+    {% for rep in vehicule.reparations.all %}
+    <div class="rep-item">
+        <div class="rep-stripe {{ rep.statut }}"></div>
+        <div class="rep-body">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <!-- Infos gauche -->
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                        <span style="font-weight:700;font-size:13px;">
+                            <i class="bi bi-calendar3 me-1 text-muted"></i>{{ rep.date_reparation|date:"d/m/Y" }}
+                        </span>
+                        <span class="rep-type-badge">{{ rep.type_reparation.nom }}</span>
+                        <span class="rep-statut {{ rep.statut }}">
+                            {% if rep.statut == 'terminee' %}
+                                <i class="bi bi-check-circle"></i> Terminée
+                            {% elif rep.statut == 'en_cours' %}
+                                <i class="bi bi-hourglass-split"></i> En cours
+                            {% else %}
+                                <i class="bi bi-clock"></i> En attente
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="text-muted mb-1" style="font-size:13px;">
+                        <i class="bi bi-building me-1"></i>
+                        <strong>{{ rep.garage_prestataire }}</strong>
+                    </div>
+                    <div class="text-muted" style="font-size:12px;">
+                        {{ rep.description|truncatewords:20 }}
+                    </div>
+                    {% if rep.pieces_remplacees %}
+                    <div class="text-muted mt-1" style="font-size:11px;">
+                        <i class="bi bi-gear-fill me-1"></i>{{ rep.pieces_remplacees|truncatewords:12 }}
+                    </div>
                     {% endif %}
-                </h6>
-                <p class="mb-1">
-                    <i class="bi bi-building me-1"></i><strong>{{ reparation.garage_prestataire }}</strong>
-                </p>
-                <p class="mb-1 text-muted">{{ reparation.description|truncatewords:20 }}</p>
-                {% if reparation.pieces_remplacees %}
-                <p class="mb-1 text-muted small">
-                    <i class="bi bi-gear-fill me-1"></i>{{ reparation.pieces_remplacees|truncatewords:15 }}
-                </p>
-                {% endif %}
-            </div>
-            <div class="text-end">
-                <h5 class="mb-2 text-primary">{{ reparation.montant|floatformat:0|intcomma }} FCFA</h5>
-                <div class="btn-group btn-group-sm" role="group">
-                    <a href="{% url 'vehicules:reparation_detail' reparation.pk %}" class="btn btn-outline-primary" title="Voir détails">
-                        <i class="bi bi-eye"></i>
-                    </a>
-                    <a href="{% url 'vehicules:reparation_update' reparation.pk %}" class="btn btn-outline-warning" title="Modifier">
-                        <i class="bi bi-pencil"></i>
-                    </a>
-                    <a href="{% url 'vehicules:reparation_delete' reparation.pk %}" class="btn btn-outline-danger" title="Supprimer">
-                        <i class="bi bi-trash"></i>
-                    </a>
+                </div>
+
+                <!-- Montant + actions droite -->
+                <div class="d-flex flex-column align-items-end gap-2">
+                    <div class="rep-montant">{{ rep.montant|floatformat:0|intcomma }} FCFA</div>
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'vehicules:reparation_detail' rep.pk %}"
+                           class="btn-action-sm view" title="Voir détails">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'vehicules:reparation_update' rep.pk %}"
+                           class="btn-action-sm edit" title="Modifier">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'vehicules:reparation_delete' rep.pk %}"
+                           class="btn-action-sm del" title="Supprimer">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     {% endfor %}
-</div>
+
 {% else %}
-<div class="alert alert-info" role="alert">
-    <i class="bi bi-info-circle me-2"></i>
-    Aucune réparation enregistrée pour ce véhicule.
-</div>
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-tools" style="font-size:2.5rem;display:block;margin-bottom:12px;opacity:0.4;"></i>
+        <p class="fw-semibold mb-2">Aucune réparation enregistrée</p>
+        <a href="{% url 'vehicules:reparation_create' %}?vehicule={{ vehicule.pk }}"
+           class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Ajouter la première réparation
+        </a>
+    </div>
 {% endif %}

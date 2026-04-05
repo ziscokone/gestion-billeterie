@@ -27,7 +27,7 @@ class ModeleVehiculeListView(AdminRequiredMixin, ListView):
     context_object_name = 'modeles'
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().annotate(nb_vehicules=Count('vehicules'))
         search = self.request.GET.get('q')
         if search:
             queryset = queryset.filter(
@@ -39,6 +39,8 @@ class ModeleVehiculeListView(AdminRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('q', '')
+        context['nb_total'] = ModeleVehicule.objects.count()
+        context['nb_marques'] = ModeleVehicule.objects.values('marque').distinct().count()
         return context
 
 
@@ -85,19 +87,38 @@ class VehiculeListView(AdminRequiredMixin, ListView):
     context_object_name = 'vehicules'
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.GET.get('q')
+        queryset = super().get_queryset().select_related('modele')
+        search = self.request.GET.get('q', '')
+        statut = self.request.GET.get('statut', 'tous')
+
         if search:
             queryset = queryset.filter(
                 Q(immatriculation__icontains=search) |
                 Q(modele__nom__icontains=search) |
                 Q(modele__marque__icontains=search)
             )
-        return queryset.select_related('modele').order_by('-actif', 'immatriculation')
+        if statut == 'actif':
+            queryset = queryset.filter(actif=True)
+        elif statut == 'inactif':
+            queryset = queryset.filter(actif=False)
+        elif statut == 'en_reparation':
+            queryset = queryset.filter(
+                reparations__statut__in=['en_attente', 'en_cours']
+            ).distinct()
+
+        return queryset.order_by('-actif', 'immatriculation')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        all_vehicules = Vehicule.objects.all()
         context['search_query'] = self.request.GET.get('q', '')
+        context['statut_filtre'] = self.request.GET.get('statut', 'tous')
+        context['nb_total'] = all_vehicules.count()
+        context['nb_actifs'] = all_vehicules.filter(actif=True).count()
+        context['nb_inactifs'] = all_vehicules.filter(actif=False).count()
+        context['nb_en_reparation'] = all_vehicules.filter(
+            reparations__statut__in=['en_attente', 'en_cours']
+        ).distinct().count()
         return context
 
 
