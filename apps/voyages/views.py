@@ -1326,7 +1326,8 @@ class DashboardReportsView(GestionRequiredMixin, TemplateView):
         # Grouper par guichetier
         from django.db.models import Sum
         stats_guichetiers = reports.values(
-            'guichetier__nom_complet'
+            'guichetier__nom_complet',
+            'guichetier__gare__nom'
         ).annotate(
             nb_reports=Count('id'),
             montant_total=Sum('ancien_billet__montant')
