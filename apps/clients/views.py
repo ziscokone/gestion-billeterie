@@ -12,7 +12,7 @@ class ClientListView(LoginRequiredMixin, ListView):
     model = Client
     template_name = 'clients/liste.html'
     context_object_name = 'clients'
-    paginate_by = 25
+    paginate_by = 20
 
     def get_queryset(self):
         queryset = Client.objects.annotate(nb_billets=Count('billets'))
@@ -25,8 +25,17 @@ class ClientListView(LoginRequiredMixin, ListView):
         return queryset.order_by('nom_complet')
 
     def get_context_data(self, **kwargs):
+        from django.utils import timezone
         context = super().get_context_data(**kwargs)
         context['search'] = self.request.GET.get('search', '')
+        context['nb_total'] = Client.objects.count()
+        context['nb_ce_mois'] = Client.objects.filter(
+            date_creation__month=timezone.now().month,
+            date_creation__year=timezone.now().year
+        ).count()
+        context['nb_fideles'] = Client.objects.annotate(
+            nb=Count('billets')
+        ).filter(nb__gte=5).count()
         return context
 
 
