@@ -169,27 +169,23 @@ class ReparationVehiculeListView(AdminRequiredMixin, ListView):
     model = ReparationVehicule
     template_name = 'vehicules/reparation_list.html'
     context_object_name = 'reparations'
-    paginate_by = 20
+    paginate_by = 15
 
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # Filtre par véhicule
         vehicule_id = self.request.GET.get('vehicule')
         if vehicule_id:
             queryset = queryset.filter(vehicule_id=vehicule_id)
 
-        # Filtre par type
         type_reparation = self.request.GET.get('type')
         if type_reparation:
             queryset = queryset.filter(type_reparation_id=type_reparation)
 
-        # Filtre par statut
         statut = self.request.GET.get('statut')
         if statut:
             queryset = queryset.filter(statut=statut)
 
-        # Filtre par date
         date_debut = self.request.GET.get('date_debut')
         date_fin = self.request.GET.get('date_fin')
         if date_debut:
@@ -205,16 +201,20 @@ class ReparationVehiculeListView(AdminRequiredMixin, ListView):
         context['types_reparation'] = TypeReparation.objects.filter(actif=True)
         context['statuts'] = ReparationVehicule.STATUT_CHOICES
 
-        # Calcul du total pour la période filtrée
+        all_reps = ReparationVehicule.objects.all()
+        context['nb_total']    = all_reps.count()
+        context['nb_attente']  = all_reps.filter(statut='en_attente').count()
+        context['nb_en_cours'] = all_reps.filter(statut='en_cours').count()
+        context['nb_termines'] = all_reps.filter(statut='terminee').count()
+
         queryset = self.get_queryset()
         context['cout_total_periode'] = queryset.aggregate(total=Sum('montant'))['total'] or 0
 
-        # Récupérer les valeurs des filtres
-        context['vehicule_filtre'] = self.request.GET.get('vehicule', '')
-        context['type_filtre'] = self.request.GET.get('type', '')
-        context['statut_filtre'] = self.request.GET.get('statut', '')
-        context['date_debut_filtre'] = self.request.GET.get('date_debut', '')
-        context['date_fin_filtre'] = self.request.GET.get('date_fin', '')
+        context['vehicule_filtre']    = self.request.GET.get('vehicule', '')
+        context['type_filtre']        = self.request.GET.get('type', '')
+        context['statut_filtre']      = self.request.GET.get('statut', '')
+        context['date_debut_filtre']  = self.request.GET.get('date_debut', '')
+        context['date_fin_filtre']    = self.request.GET.get('date_fin', '')
 
         return context
 

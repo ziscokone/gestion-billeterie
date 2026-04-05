@@ -1106,6 +1106,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let typesDepenses = [];
     let depensesExistantes = [];
     let ligneCounter = 0;
+    let typesReparations = [];
+    let vehiculesActifs = [];
+    let vehiculeVoyageId = null;
 
     // Charger les données lors de l'ouverture du modal
     document.getElementById('depensesModal').addEventListener('show.bs.modal', function() {
@@ -1120,6 +1123,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     typesDepenses = data.types_depenses;
                     depensesExistantes = data.depenses;
+                    typesReparations = data.types_reparations || [];
+                    vehiculesActifs = data.vehicules_actifs || [];
+                    vehiculeVoyageId = data.vehicule_voyage_id || null;
 
                     // Générer les champs de saisie
                     generateDepensesInputs();
@@ -1147,6 +1153,34 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ne rien ajouter au départ - l'utilisateur doit cliquer sur "Ajouter une ligne"
     }
 
+    // Construire les options du select véhicule pour réparation inline
+    function buildVehiculeOptions() {
+        let opts = '<option value="">-- Sélectionner un véhicule --</option>';
+        vehiculesActifs.forEach(v => {
+            const sel = vehiculeVoyageId && v.id === vehiculeVoyageId ? ' selected' : '';
+            opts += `<option value="${v.id}"${sel}>${v.immatriculation}${v.modele ? ' - ' + v.modele : ''}</option>`;
+        });
+        return opts;
+    }
+
+    // Construire les options du select type réparation
+    function buildTypeRepOptions() {
+        let opts = '<option value="">-- Sélectionner --</option>';
+        typesReparations.forEach(t => {
+            opts += `<option value="${t.id}">${t.nom}</option>`;
+        });
+        return opts;
+    }
+
+    // Détecter si un type de dépense est "réparation"
+    function isReparationType(typeId) {
+        const type = typesDepenses.find(t => t.id == typeId);
+        if (!type) return false;
+        return type.code === 'reparation' ||
+               type.nom.toLowerCase().includes('réparation') ||
+               type.nom.toLowerCase().includes('reparation');
+    }
+
     // Fonction pour ajouter une nouvelle ligne de saisie
     function addDepenseInput() {
         if (typesDepenses.length === 0) {
@@ -1157,8 +1191,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const container = document.getElementById('depensesInputs');
         ligneCounter++;
 
+        const today = new Date().toISOString().split('T')[0];
+
         const div = document.createElement('div');
-        div.className = 'row mb-2 align-items-end depense-input-row';
+        div.className = 'depense-input-row mb-3';
         div.dataset.ligneId = ligneCounter;
 
         // Créer le dropdown des types
@@ -1168,30 +1204,64 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         div.innerHTML = `
-            <div class="col-md-3">
-                <label class="form-label small mb-1">Type *</label>
-                <select class="form-select form-select-sm depense-type-select">
-                    ${typesOptions}
-                </select>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Type *</label>
+                    <select class="form-select form-select-sm depense-type-select">
+                        ${typesOptions}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Montant (FCFA) *</label>
+                    <input type="number"
+                           class="form-control form-control-sm depense-montant"
+                           placeholder="Montant"
+                           min="0"
+                           step="1">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small mb-1">Description</label>
+                    <input type="text"
+                           class="form-control form-control-sm depense-description"
+                           placeholder="Description">
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-ligne" title="Retirer cette ligne">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label small mb-1">Montant (FCFA) *</label>
-                <input type="number"
-                       class="form-control form-control-sm depense-montant"
-                       placeholder="Montant"
-                       min="0"
-                       step="1">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small mb-1">Description</label>
-                <input type="text"
-                       class="form-control form-control-sm depense-description"
-                       placeholder="Description">
-            </div>
-            <div class="col-md-2 text-end">
-                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-ligne" title="Retirer cette ligne">
-                    <i class="bi bi-trash"></i>
-                </button>
+            <!-- Panneau inline réparation (caché par défaut) -->
+            <div class="rep-inline-panel d-none mt-2">
+                <div class="border border-warning rounded p-3" style="background:#fefce8;">
+                    <div class="d-flex align-items-center mb-2 gap-2">
+                        <i class="bi bi-tools text-warning"></i>
+                        <strong style="font-size:12px;color:#92400e;">Réparation — sera créée automatiquement en attente</strong>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label small mb-1">Véhicule *</label>
+                            <select class="form-select form-select-sm rep-vehicule">
+                                ${buildVehiculeOptions()}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small mb-1">Type de réparation *</label>
+                            <select class="form-select form-select-sm rep-type-reparation">
+                                ${buildTypeRepOptions()}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small mb-1">Date *</label>
+                            <input type="date" class="form-control form-control-sm rep-date" value="${today}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small mb-1">Garage / Prestataire *</label>
+                            <input type="text" class="form-control form-control-sm rep-garage"
+                                   placeholder="Nom du garage ou prestataire">
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -1200,6 +1270,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Gestionnaire pour la suppression de ligne
         div.querySelector('.btn-remove-ligne').addEventListener('click', function() {
             div.remove();
+        });
+
+        // Gestionnaire pour afficher/masquer le panneau réparation selon le type choisi
+        div.querySelector('.depense-type-select').addEventListener('change', function() {
+            const panel = div.querySelector('.rep-inline-panel');
+            if (isReparationType(this.value)) {
+                panel.classList.remove('d-none');
+            } else {
+                panel.classList.add('d-none');
+            }
         });
     }
 
@@ -1339,10 +1419,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Collecter les données réparation inline si le panneau est visible
+            let reparationData = null;
+            const repPanel = row.querySelector('.rep-inline-panel');
+            if (repPanel && !repPanel.classList.contains('d-none')) {
+                const repVehiculeId = repPanel.querySelector('.rep-vehicule').value;
+                const repTypeId = repPanel.querySelector('.rep-type-reparation').value;
+                const repDate = repPanel.querySelector('.rep-date').value;
+                const repGarage = repPanel.querySelector('.rep-garage').value.trim();
+
+                if (!repVehiculeId) {
+                    showDepensesMessage('Veuillez sélectionner un véhicule pour la réparation', 'danger');
+                    hasError = true;
+                    return;
+                }
+                if (!repTypeId) {
+                    showDepensesMessage('Veuillez sélectionner un type de réparation', 'danger');
+                    hasError = true;
+                    return;
+                }
+                if (!repGarage) {
+                    showDepensesMessage('Veuillez saisir le garage/prestataire pour la réparation', 'danger');
+                    hasError = true;
+                    return;
+                }
+
+                reparationData = {
+                    vehicule_id: parseInt(repVehiculeId),
+                    type_reparation_id: parseInt(repTypeId),
+                    date_reparation: repDate,
+                    garage_prestataire: repGarage,
+                };
+            }
+
             depenses.push({
                 type_depense_id: parseInt(typeId),
                 montant: parseFloat(montant),
-                description: description
+                description: description,
+                reparation: reparationData,
             });
         });
 

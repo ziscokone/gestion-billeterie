@@ -553,6 +553,25 @@ def get_voyage_depenses(request, pk):
             for d in depenses
         ]
 
+        # Récupérer les types de réparation actifs
+        from apps.vehicules.models import TypeReparation as TypeReparationVehicule
+        types_reparations_data = [
+            {'id': t.id, 'nom': t.nom}
+            for t in TypeReparationVehicule.objects.filter(actif=True).order_by('nom')
+        ]
+
+        # Récupérer les véhicules actifs de la flotte
+        vehicules_actifs_data = []
+        for v in Vehicule.objects.filter(actif=True).select_related('modele').order_by('immatriculation'):
+            vehicules_actifs_data.append({
+                'id': v.id,
+                'immatriculation': v.immatriculation,
+                'modele': v.modele.nom if v.modele else '',
+            })
+
+        # Véhicule assigné au voyage
+        vehicule_voyage_id = voyage.vehicule.id if voyage.vehicule else None
+
         # Calculer le total des dépenses
         total_depenses = sum((d.montant for d in depenses), Decimal('0'))
 
@@ -560,7 +579,10 @@ def get_voyage_depenses(request, pk):
             'success': True,
             'types_depenses': types_data,
             'depenses': depenses_data,
-            'total_depenses': float(total_depenses)
+            'total_depenses': float(total_depenses),
+            'types_reparations': types_reparations_data,
+            'vehicules_actifs': vehicules_actifs_data,
+            'vehicule_voyage_id': vehicule_voyage_id,
         })
 
     except Exception as e:
@@ -599,6 +621,7 @@ def add_voyage_depenses(request, pk):
             type_depense_id = depense_data.get('type_depense_id')
             montant = depense_data.get('montant')
             description = depense_data.get('description', '').strip()
+            reparation_inline = depense_data.get('reparation')  # données réparation inline
 
             # Validation
             if not type_depense_id:
@@ -620,6 +643,30 @@ def add_voyage_depenses(request, pk):
                 erreurs.append(f"La description est obligatoire pour '{type_depense.nom}'")
                 continue
 
+            # Si c'est un type réparation avec données inline, valider les champs réparation
+            is_reparation_type = (
+                type_depense.code == 'reparation' or
+                'réparation' in type_depense.nom.lower() or
+                'reparation' in type_depense.nom.lower()
+            )
+            if is_reparation_type and reparation_inline:
+                rep_vehicule_id = reparation_inline.get('vehicule_id')
+                rep_type_id = reparation_inline.get('type_reparation_id')
+                rep_garage = (reparation_inline.get('garage_prestataire') or '').strip()
+                rep_date = reparation_inline.get('date_reparation')
+                if not rep_vehicule_id:
+                    erreurs.append("Le véhicule est obligatoire pour la réparation")
+                    continue
+                if not rep_type_id:
+                    erreurs.append("Le type de réparation est obligatoire")
+                    continue
+                if not rep_garage:
+                    erreurs.append("Le garage/prestataire est obligatoire pour la réparation")
+                    continue
+                if not rep_date:
+                    erreurs.append("La date de réparation est obligatoire")
+                    continue
+
             # Créer la dépense
             depense = Depense(
                 voyage=voyage,
@@ -631,6 +678,31 @@ def add_voyage_depenses(request, pk):
 
             try:
                 depense.save()
+
+                # Auto-créer la réparation si données inline présentes
+                if is_reparation_type and reparation_inline:
+                    from apps.vehicules.models import Vehicule as VehiculeModel, TypeReparation, ReparationVehicule
+                    from datetime import datetime as dt
+                    try:
+                        rep_vehicule = VehiculeModel.objects.get(pk=rep_vehicule_id, actif=True)
+                        rep_type = TypeReparation.objects.get(pk=rep_type_id, actif=True)
+                        rep_date_obj = dt.strptime(rep_date, '%Y-%m-%d').date()
+                        reparation = ReparationVehicule.objects.create(
+                            vehicule=rep_vehicule,
+                            date_reparation=rep_date_obj,
+                            type_reparation=rep_type,
+                            description=description or '',
+                            garage_prestataire=rep_garage,
+                            montant=float(montant),
+                            statut='en_attente',
+                            creee_depuis_guichet=True,
+                            voyage_source=voyage,
+                        )
+                        depense.reparation = reparation
+                        depense.save(update_fields=['reparation'])
+                    except Exception as e_rep:
+                        erreurs.append(f"Dépense enregistrée mais réparation non créée : {str(e_rep)}")
+
                 depenses_creees.append({
                     'id': depense.id,
                     'type_depense_nom': depense.type_depense.nom,

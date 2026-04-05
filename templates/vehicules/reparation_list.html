@@ -3,178 +3,453 @@
 
 {% block title %}Gestion des Réparations{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ── Header ─────────────────────────────────────────────── */
+.page-header {
+    background: linear-gradient(135deg, #1e3260 0%, var(--color-accent) 100%);
+    border-radius: 14px;
+    padding: 26px 32px;
+    color: #fff;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.page-header::after {
+    content: '\F4D4';
+    font-family: 'Bootstrap-Icons';
+    font-size: 9rem;
+    opacity: 0.06;
+    position: absolute;
+    right: 24px;
+    top: -10px;
+    line-height: 1;
+}
+.page-header h4 { font-weight: 700; margin: 0; }
+
+.header-stat {
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 8px 16px;
+    text-align: center;
+    min-width: 90px;
+}
+.header-stat .hs-val { font-size: 1.4rem; font-weight: 700; line-height: 1; }
+.header-stat .hs-lbl { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+
+.btn-header {
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 7px 16px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.btn-header.primary { background: #fff; color: var(--color-accent); border: none; }
+.btn-header.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: var(--color-accent); }
+.btn-header.outline { background: rgba(255,255,255,0.2); color: #fff; border: 1.5px solid rgba(255,255,255,0.4); }
+.btn-header.outline:hover { background: rgba(255,255,255,0.3); color: #fff; }
+
+/* ── Filtres ─────────────────────────────────────────────── */
+.filter-zone {
+    background: #f8f9fc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+}
+.filter-zone .form-label { font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+.cout-chip {
+    background: linear-gradient(135deg, #1e3260, var(--color-accent));
+    color: #fff;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ── Table ──────────────────────────────────────────────── */
+.rep-card {
+    border: none;
+    border-radius: 13px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    overflow: hidden;
+}
+.rep-card .table-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e3260;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+}
+
+.r-table th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    padding: 11px 16px;
+    background: #fafbfc;
+    border-bottom: 1px solid #f0f0f0;
+}
+.r-table td { padding: 12px 16px; vertical-align: middle; font-size: 13px; }
+.r-table tbody tr { transition: background 0.12s; }
+.r-table tbody tr:hover { background: #f8f9fc; }
+.r-table tbody tr:last-child td { border-bottom: none; }
+
+/* Avatar véhicule */
+.v-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1e3260, var(--color-accent));
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    flex-shrink: 0;
+}
+.v-immat { font-weight: 700; color: #111827; font-size: 13px; }
+.v-sub   { font-size: 11px; color: #9ca3af; }
+
+/* Badge type réparation */
+.type-badge {
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #eef2ff;
+    color: #3730a3;
+    display: inline-block;
+}
+
+/* Montant coloré selon seuil */
+.montant-haut  { color: #dc2626; font-weight: 800; }
+.montant-moyen { color: var(--color-warning); font-weight: 800; }
+.montant-bas   { color: var(--color-accent); font-weight: 700; }
+
+/* Badges statut */
+.rep-statut {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 12px; padding: 3px 10px;
+    font-size: 11px; font-weight: 600;
+}
+.rep-statut.terminee   { background: #dcfce7; color: #166534; }
+.rep-statut.en_cours   { background: #fef3c7; color: #92400e; }
+.rep-statut.en_attente { background: #dbeafe; color: #1e40af; }
+
+/* Boutons action */
+.btn-action {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    border: 1px solid #e5e7eb;
+    background: #fff; color: #6b7280;
+    transition: all 0.15s; text-decoration: none;
+}
+.btn-action:hover        { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.btn-action.view:hover   { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.btn-action.edit:hover   { background: #fefce8; color: #92400e; border-color: #fde68a; }
+.btn-action.del:hover    { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+/* ── Pagination ─────────────────────────────────────────── */
+.pagination-zone {
+    padding: 14px 20px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafbfc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.pagination-info { font-size: 12px; color: #6b7280; }
+
+.c-pagination { display: flex; gap: 4px; align-items: center; margin: 0; padding: 0; list-style: none; }
+.c-pagination .page-btn {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600;
+    border: 1px solid #e5e7eb;
+    background: #fff; color: #374151;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+.c-pagination .page-btn:hover    { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.c-pagination .page-btn.active   { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+.c-pagination .page-btn.dots     { border: none; background: transparent; cursor: default; color: #9ca3af; }
+.c-pagination .page-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+/* État vide */
+.empty-state { text-align: center; padding: 56px 20px; color: #9ca3af; }
+.empty-state i { font-size: 3rem; display: block; margin-bottom: 12px; }
+</style>
+{% endblock %}
+
+{% comment %}
+Macro pour générer les paramètres de pagination en conservant les filtres.
+{% endcomment %}
+
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="card shadow-sm">
-        <div class="card-header text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">
-                    <i class="bi bi-tools me-2"></i>Gestion des Réparations
-                </h4>
-                <div>
-                    <a href="{% url 'vehicules:rapport_reparations' %}" class="btn btn-sm me-2" style="background-color: #E67E22; color: white;">
-                        <i class="bi bi-bar-chart-fill me-1"></i>Voir le rapport
-                    </a>
-                    <a href="{% url 'vehicules:reparation_create' %}" class="btn btn-success btn-sm">
-                        <i class="bi bi-plus-circle me-1"></i>Ajouter une réparation
-                    </a>
+<div class="container-fluid py-4 px-4">
+
+    <!-- ── Header ──────────────────────────────────────────────── -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h4><i class="bi bi-tools me-2"></i>Réparations</h4>
+            <div class="d-flex gap-3 mt-3 flex-wrap">
+                <div class="header-stat">
+                    <div class="hs-val">{{ nb_total }}</div>
+                    <div class="hs-lbl">Total</div>
+                </div>
+                <div class="header-stat">
+                    <div class="hs-val">{{ nb_attente }}</div>
+                    <div class="hs-lbl">En attente</div>
+                </div>
+                <div class="header-stat">
+                    <div class="hs-val">{{ nb_en_cours }}</div>
+                    <div class="hs-lbl">En cours</div>
+                </div>
+                <div class="header-stat">
+                    <div class="hs-val">{{ nb_termines }}</div>
+                    <div class="hs-lbl">Terminées</div>
                 </div>
             </div>
         </div>
-
-        <div class="card-body">
-            <!-- Filtres -->
-            <div class="card mb-4 border-primary">
-                <div class="card-header text-white">
-                    <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtres</h6>
-                </div>
-                <div class="card-body">
-                    <form method="get" class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label">Véhicule</label>
-                            <select name="vehicule" class="form-select">
-                                <option value="">Tous les véhicules</option>
-                                {% for vehicule in vehicules %}
-                                    <option value="{{ vehicule.pk }}" {% if vehicule_filtre == vehicule.pk|stringformat:"s" %}selected{% endif %}>
-                                        {{ vehicule.immatriculation }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Type</label>
-                            <select name="type" class="form-select">
-                                <option value="">Tous types</option>
-                                {% for type in types_reparation %}
-                                    <option value="{{ type.pk }}" {% if type_filtre == type.pk|stringformat:"s" %}selected{% endif %}>{{ type.nom }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Statut</label>
-                            <select name="statut" class="form-select">
-                                <option value="">Tous statuts</option>
-                                {% for code, label in statuts %}
-                                    <option value="{{ code }}" {% if statut_filtre == code %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Date début</label>
-                            <input type="date" name="date_debut" class="form-control" value="{{ date_debut_filtre }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Date fin</label>
-                            <input type="date" name="date_fin" class="form-control" value="{{ date_fin_filtre }}">
-                        </div>
-                        <div class="col-md-1 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search"></i>
-                            </button>
-                        </div>
-                    </form>
-                    {% if cout_total_periode > 0 %}
-                    <div class="alert alert-info mt-3 mb-0">
-                        <strong>Coût total période sélectionnée :</strong> {{ cout_total_periode|floatformat:0|intcomma }} FCFA
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Tableau des réparations -->
-            {% if reparations %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Date</th>
-                            <th>Véhicule</th>
-                            <th>Type</th>
-                            <th>Montant</th>
-                            <th>Garage</th>
-                            <th>Statut</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for reparation in reparations %}
-                        <tr>
-                            <td>{{ reparation.date_reparation|date:"d/m/Y" }}</td>
-                            <td>
-                                <strong>{{ reparation.vehicule.immatriculation }}</strong><br>
-                                <small class="text-muted">{{ reparation.vehicule.modele.nom }}</small>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">{{ reparation.type_reparation.nom }}</span>
-                            </td>
-                            <td><strong class="text-primary">{{ reparation.montant|floatformat:0|intcomma }} F</strong></td>
-                            <td>{{ reparation.garage_prestataire }}</td>
-                            <td>
-                                {% if reparation.statut == 'terminee' %}
-                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Terminée</span>
-                                {% elif reparation.statut == 'en_cours' %}
-                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> En cours</span>
-                                {% else %}
-                                    <span class="badge bg-info"><i class="bi bi-clock"></i> En attente</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{% url 'vehicules:reparation_detail' reparation.pk %}" class="btn btn-outline-primary" title="Voir">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    {% if reparation.statut != 'terminee' %}
-                                    <a href="{% url 'vehicules:reparation_update' reparation.pk %}" class="btn btn-outline-warning" title="Modifier">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <a href="{% url 'vehicules:reparation_delete' reparation.pk %}" class="btn btn-outline-danger" title="Supprimer">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <nav aria-label="Navigation des pages">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1{% if vehicule_filtre %}&vehicule={{ vehicule_filtre }}{% endif %}{% if type_filtre %}&type={{ type_filtre }}{% endif %}{% if statut_filtre %}&statut={{ statut_filtre }}{% endif %}{% if date_debut_filtre %}&date_debut={{ date_debut_filtre }}{% endif %}{% if date_fin_filtre %}&date_fin={{ date_fin_filtre }}{% endif %}">Première</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if vehicule_filtre %}&vehicule={{ vehicule_filtre }}{% endif %}{% if type_filtre %}&type={{ type_filtre }}{% endif %}{% if statut_filtre %}&statut={{ statut_filtre }}{% endif %}{% if date_debut_filtre %}&date_debut={{ date_debut_filtre }}{% endif %}{% if date_fin_filtre %}&date_fin={{ date_fin_filtre }}{% endif %}">Précédente</a>
-                        </li>
-                    {% endif %}
-
-                    <li class="page-item active">
-                        <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
-                    </li>
-
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if vehicule_filtre %}&vehicule={{ vehicule_filtre }}{% endif %}{% if type_filtre %}&type={{ type_filtre }}{% endif %}{% if statut_filtre %}&statut={{ statut_filtre }}{% endif %}{% if date_debut_filtre %}&date_debut={{ date_debut_filtre }}{% endif %}{% if date_fin_filtre %}&date_fin={{ date_fin_filtre }}{% endif %}">Suivante</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if vehicule_filtre %}&vehicule={{ vehicule_filtre }}{% endif %}{% if type_filtre %}&type={{ type_filtre }}{% endif %}{% if statut_filtre %}&statut={{ statut_filtre }}{% endif %}{% if date_debut_filtre %}&date_debut={{ date_debut_filtre }}{% endif %}{% if date_fin_filtre %}&date_fin={{ date_fin_filtre }}{% endif %}">Dernière</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-
-            {% else %}
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                Aucune réparation trouvée avec ces critères.
-            </div>
-            {% endif %}
+        <div class="d-flex flex-column gap-2 align-items-end">
+            <a href="{% url 'vehicules:reparation_create' %}" class="btn-header primary">
+                <i class="bi bi-plus-circle"></i>Ajouter une réparation
+            </a>
+            <a href="{% url 'vehicules:rapport_reparations' %}" class="btn-header outline">
+                <i class="bi bi-bar-chart-fill"></i>Voir le rapport
+            </a>
         </div>
     </div>
+
+    <!-- ── Filtres ───────────────────────────────────────────────── -->
+    <div class="filter-zone">
+        <form method="get">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Véhicule</label>
+                    <select name="vehicule" class="form-select form-select-sm">
+                        <option value="">Tous les véhicules</option>
+                        {% for vehicule in vehicules %}
+                            <option value="{{ vehicule.pk }}" {% if vehicule_filtre == vehicule.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ vehicule.immatriculation }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Type</label>
+                    <select name="type" class="form-select form-select-sm">
+                        <option value="">Tous types</option>
+                        {% for type in types_reparation %}
+                            <option value="{{ type.pk }}" {% if type_filtre == type.pk|stringformat:"s" %}selected{% endif %}>{{ type.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Statut</label>
+                    <select name="statut" class="form-select form-select-sm">
+                        <option value="">Tous statuts</option>
+                        {% for code, label in statuts %}
+                            <option value="{{ code }}" {% if statut_filtre == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date début</label>
+                    <input type="date" name="date_debut" class="form-control form-control-sm" value="{{ date_debut_filtre }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date fin</label>
+                    <input type="date" name="date_fin" class="form-control form-control-sm" value="{{ date_fin_filtre }}">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            {% if cout_total_periode > 0 %}
+            <div class="mt-3">
+                <span class="cout-chip">
+                    <i class="bi bi-calculator"></i>
+                    Coût total : {{ cout_total_periode|floatformat:0|intcomma }} FCFA
+                </span>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- ── Table ──────────────────────────────────────────────────── -->
+    <div class="rep-card">
+        <div class="table-header">
+            <span><i class="bi bi-tools me-2" style="color:var(--color-accent)"></i>Liste des réparations</span>
+            <span class="badge rounded-pill" style="background:#eef2ff;color:#4338ca;font-size:12px;font-weight:600">
+                {{ page_obj.paginator.count }} réparation{{ page_obj.paginator.count|pluralize }}
+            </span>
+        </div>
+
+        {% if reparations %}
+        <div class="table-responsive">
+            <table class="table r-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Véhicule</th>
+                        <th>Type</th>
+                        <th>Montant</th>
+                        <th>Garage</th>
+                        <th>Statut</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rep in reparations %}
+                    <tr>
+                        <td class="text-muted" style="font-size:12px;white-space:nowrap;">
+                            {{ rep.date_reparation|date:"d/m/Y" }}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="v-icon">{{ rep.vehicule.immatriculation|slice:":2"|upper }}</div>
+                                <div>
+                                    <div class="v-immat">{{ rep.vehicule.immatriculation }}</div>
+                                    <div class="v-sub">{{ rep.vehicule.modele.nom }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="type-badge">{{ rep.type_reparation.nom }}</span>
+                        </td>
+                        <td>
+                            {% if rep.montant >= 1000000 %}
+                                <span class="montant-haut">{{ rep.montant|floatformat:0|intcomma }} F</span>
+                            {% elif rep.montant >= 500000 %}
+                                <span class="montant-moyen">{{ rep.montant|floatformat:0|intcomma }} F</span>
+                            {% else %}
+                                <span class="montant-bas">{{ rep.montant|floatformat:0|intcomma }} F</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:12px;">{{ rep.garage_prestataire }}</td>
+                        <td>
+                            <span class="rep-statut {{ rep.statut }}">
+                                {% if rep.statut == 'terminee' %}
+                                    <i class="bi bi-check-circle"></i> Terminée
+                                {% elif rep.statut == 'en_cours' %}
+                                    <i class="bi bi-hourglass-split"></i> En cours
+                                {% else %}
+                                    <i class="bi bi-clock"></i> En attente
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex gap-1 justify-content-end">
+                                <a href="{% url 'vehicules:reparation_detail' rep.pk %}"
+                                   class="btn-action view" title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if rep.statut != 'terminee' %}
+                                <a href="{% url 'vehicules:reparation_update' rep.pk %}"
+                                   class="btn-action edit" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'vehicules:reparation_delete' rep.pk %}"
+                                   class="btn-action del" title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ── Pagination ── -->
+        {% if page_obj.has_other_pages %}
+        {% with vf=vehicule_filtre tf=type_filtre sf=statut_filtre dd=date_debut_filtre df=date_fin_filtre %}
+        <div class="pagination-zone">
+            <div class="pagination-info">
+                Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+                &nbsp;·&nbsp;
+                {{ page_obj.paginator.count }} réparation{{ page_obj.paginator.count|pluralize }} au total
+            </div>
+
+            <ul class="c-pagination">
+                {% if page_obj.has_previous %}
+                <li>
+                    <a class="page-btn" href="?page={{ page_obj.previous_page_number }}{% if vf %}&vehicule={{ vf }}{% endif %}{% if tf %}&type={{ tf }}{% endif %}{% if sf %}&statut={{ sf }}{% endif %}{% if dd %}&date_debut={{ dd }}{% endif %}{% if df %}&date_fin={{ df }}{% endif %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li><span class="page-btn disabled"><i class="bi bi-chevron-left"></i></span></li>
+                {% endif %}
+
+                {% if page_obj.number > 3 %}
+                <li><a class="page-btn" href="?page=1{% if vf %}&vehicule={{ vf }}{% endif %}{% if tf %}&type={{ tf }}{% endif %}{% if sf %}&statut={{ sf }}{% endif %}{% if dd %}&date_debut={{ dd }}{% endif %}{% if df %}&date_fin={{ df }}{% endif %}">1</a></li>
+                {% if page_obj.number > 4 %}<li><span class="page-btn dots">…</span></li>{% endif %}
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                        {% if page_obj.number == num %}
+                        <li><span class="page-btn active">{{ num }}</span></li>
+                        {% else %}
+                        <li><a class="page-btn" href="?page={{ num }}{% if vf %}&vehicule={{ vf }}{% endif %}{% if tf %}&type={{ tf }}{% endif %}{% if sf %}&statut={{ sf }}{% endif %}{% if dd %}&date_debut={{ dd }}{% endif %}{% if df %}&date_fin={{ df }}{% endif %}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.number < page_obj.paginator.num_pages|add:"-2" %}
+                {% if page_obj.number < page_obj.paginator.num_pages|add:"-3" %}<li><span class="page-btn dots">…</span></li>{% endif %}
+                <li><a class="page-btn" href="?page={{ page_obj.paginator.num_pages }}{% if vf %}&vehicule={{ vf }}{% endif %}{% if tf %}&type={{ tf }}{% endif %}{% if sf %}&statut={{ sf }}{% endif %}{% if dd %}&date_debut={{ dd }}{% endif %}{% if df %}&date_fin={{ df }}{% endif %}">{{ page_obj.paginator.num_pages }}</a></li>
+                {% endif %}
+
+                {% if page_obj.has_next %}
+                <li>
+                    <a class="page-btn" href="?page={{ page_obj.next_page_number }}{% if vf %}&vehicule={{ vf }}{% endif %}{% if tf %}&type={{ tf }}{% endif %}{% if sf %}&statut={{ sf }}{% endif %}{% if dd %}&date_debut={{ dd }}{% endif %}{% if df %}&date_fin={{ df }}{% endif %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li><span class="page-btn disabled"><i class="bi bi-chevron-right"></i></span></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endwith %}
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-tools text-muted"></i>
+            <p class="fw-semibold">Aucune réparation trouvée avec ces critères</p>
+            <a href="{% url 'vehicules:reparation_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                <i class="bi bi-x me-1"></i>Réinitialiser les filtres
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+
 </div>
 {% endblock %}
