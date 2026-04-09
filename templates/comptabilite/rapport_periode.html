@@ -161,6 +161,34 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
 
+  /* ── Pagination ─────────────────────────────────────── */
+  .pagination-zone {
+    padding: 14px 20px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafbfc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .pagination-info { font-size: 12px; color: #6b7280; }
+  .c-pagination { display: flex; gap: 4px; align-items: center; margin: 0; padding: 0; list-style: none; }
+  .c-pagination .page-btn {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600;
+    border: 1px solid #e5e7eb;
+    background: #fff; color: #374151;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .c-pagination .page-btn:hover    { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+  .c-pagination .page-btn.active   { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+  .c-pagination .page-btn.dots     { border: none; background: transparent; cursor: default; color: #9ca3af; }
+  .c-pagination .page-btn.disabled { opacity: 0.4; pointer-events: none; }
+
   /* ── Vide ────────────────────────────────────────────── */
   .empty-state { text-align: center; padding: 52px 20px; color: #9ca3af; }
   .empty-state i { font-size: 2.8rem; display: block; margin-bottom: 12px; }
@@ -258,14 +286,21 @@
   <div class="section-card">
     <div class="section-header">
       <span><i class="bi bi-bus-front"></i>Voyages de la période</span>
-      {% if voyages_periode %}
-      <span class="badge rounded-pill" style="background:#eef2ff;color:#4338ca;font-size:12px;font-weight:600">
-        {{ voyages_periode|length }} voyage{{ voyages_periode|length|pluralize }}
-      </span>
+      {% if voyages_periode_count %}
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge rounded-pill" style="background:#eef2ff;color:#4338ca;font-size:12px;font-weight:600">
+          {{ voyages_periode_count }} voyage{{ voyages_periode_count|pluralize }}
+        </span>
+        {% if page_obj.paginator.num_pages > 1 %}
+        <span style="font-size:12px;color:#9ca3af;">
+          page {{ page_obj.number }}/{{ page_obj.paginator.num_pages }}
+        </span>
+        {% endif %}
+      </div>
       {% endif %}
     </div>
 
-    {% if voyages_periode %}
+    {% if page_obj %}
     <div class="table-responsive">
       <table class="table vj-table mb-0">
         <thead>
@@ -284,7 +319,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for v in voyages_periode %}
+          {% for v in page_obj %}
           <tr>
             <td class="fw-semibold">{{ v.voyage.date_depart|date:"d/m/Y" }}</td>
             <td>{{ v.voyage.gare.nom }}</td>
@@ -330,6 +365,59 @@
         </tfoot>
       </table>
     </div>
+
+    <!-- ── Pagination ── -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-zone">
+      <div class="pagination-info">
+        Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+        &nbsp;·&nbsp;
+        {{ voyages_periode_count }} voyage{{ voyages_periode_count|pluralize }} au total
+      </div>
+      <ul class="c-pagination">
+        {% if page_obj.has_previous %}
+        <li>
+          <a class="page-btn" href="?page={{ page_obj.previous_page_number }}{% if request.GET.date_debut %}&date_debut={{ request.GET.date_debut }}{% endif %}{% if request.GET.date_fin %}&date_fin={{ request.GET.date_fin }}{% endif %}">
+            <i class="bi bi-chevron-left"></i>
+          </a>
+        </li>
+        {% else %}
+        <li><span class="page-btn disabled"><i class="bi bi-chevron-left"></i></span></li>
+        {% endif %}
+
+        {% if page_obj.number > 3 %}
+        <li><a class="page-btn" href="?page=1{% if request.GET.date_debut %}&date_debut={{ request.GET.date_debut }}{% endif %}{% if request.GET.date_fin %}&date_fin={{ request.GET.date_fin }}{% endif %}">1</a></li>
+        {% if page_obj.number > 4 %}<li><span class="page-btn dots">…</span></li>{% endif %}
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+            {% if page_obj.number == num %}
+            <li><span class="page-btn active">{{ num }}</span></li>
+            {% else %}
+            <li><a class="page-btn" href="?page={{ num }}{% if request.GET.date_debut %}&date_debut={{ request.GET.date_debut }}{% endif %}{% if request.GET.date_fin %}&date_fin={{ request.GET.date_fin }}{% endif %}">{{ num }}</a></li>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.number < page_obj.paginator.num_pages|add:"-2" %}
+        {% if page_obj.number < page_obj.paginator.num_pages|add:"-3" %}<li><span class="page-btn dots">…</span></li>{% endif %}
+        <li><a class="page-btn" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.date_debut %}&date_debut={{ request.GET.date_debut }}{% endif %}{% if request.GET.date_fin %}&date_fin={{ request.GET.date_fin }}{% endif %}">{{ page_obj.paginator.num_pages }}</a></li>
+        {% endif %}
+
+        {% if page_obj.has_next %}
+        <li>
+          <a class="page-btn" href="?page={{ page_obj.next_page_number }}{% if request.GET.date_debut %}&date_debut={{ request.GET.date_debut }}{% endif %}{% if request.GET.date_fin %}&date_fin={{ request.GET.date_fin }}{% endif %}">
+            <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+        {% else %}
+        <li><span class="page-btn disabled"><i class="bi bi-chevron-right"></i></span></li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
     {% else %}
     <div class="empty-state">
       <i class="bi bi-calendar-x text-muted"></i>

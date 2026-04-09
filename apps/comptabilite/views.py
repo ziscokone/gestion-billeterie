@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView
 from django.utils import timezone
 from django.db.models import Sum, Count, Q
+from django.core.paginator import Paginator
 from datetime import timedelta, datetime
 from decimal import Decimal
 from collections import defaultdict
@@ -233,7 +234,13 @@ class RapportPeriodeView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             total_depenses += depenses_voyage
             total_benefice_net += benefice
 
-        context['voyages_periode'] = voyages_periode
+        # Pagination : 20 voyages par page, totaux conservés sur l'ensemble
+        paginator = Paginator(voyages_periode, 20)
+        page_number = self.request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+
+        context['page_obj'] = page_obj
+        context['voyages_periode_count'] = len(voyages_periode)
         context['total_recette_bagages'] = total_recette_bagages
         context['total_depenses'] = total_depenses
         context['total_benefice_net'] = total_benefice_net
