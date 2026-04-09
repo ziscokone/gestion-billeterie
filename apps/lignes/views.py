@@ -25,6 +25,13 @@ class LigneListView(AdminRequiredMixin, ListView):
     def get_queryset(self):
         return Ligne.objects.all().order_by('ville_depart', 'ville_arrivee')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        qs = self.get_queryset()
+        context['nb_actives'] = qs.filter(active=True).count()
+        context['nb_inactives'] = qs.filter(active=False).count()
+        return context
+
 
 class LigneCreateView(AdminRequiredMixin, CreateView):
     """Créer une nouvelle ligne."""

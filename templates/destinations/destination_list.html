@@ -3,14 +3,156 @@
 
 {% block title %}Gestion des Destinations{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ── Header ──────────────────────────────────────────────── */
+.page-header {
+    background: linear-gradient(135deg, #1e3260 0%, var(--color-accent) 100%);
+    border-radius: 14px;
+    padding: 26px 32px;
+    color: #fff;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.page-header::after {
+    content: '\F3E0';
+    font-family: 'Bootstrap-Icons';
+    font-size: 9rem;
+    opacity: 0.06;
+    position: absolute;
+    right: 24px;
+    top: -10px;
+    line-height: 1;
+}
+.page-header h4 { font-weight: 700; margin: 0; }
+
+.header-stat {
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 8px 16px;
+    text-align: center;
+    min-width: 90px;
+}
+.header-stat .hs-val { font-size: 1.4rem; font-weight: 700; line-height: 1; }
+.header-stat .hs-lbl { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+
+.btn-header {
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 18px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.btn-header.primary { background: #fff; color: var(--color-accent); border: none; }
+.btn-header.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: var(--color-accent); }
+
+/* ── Filtres ─────────────────────────────────────────────── */
+.filter-zone {
+    background: #f8f9fc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+}
+.filter-zone .form-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+/* ── Table card ──────────────────────────────────────────── */
+.dest-card {
+    border: none;
+    border-radius: 13px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    overflow: hidden;
+}
+.dest-card .table-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e3260;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+}
+
+.d-table th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    padding: 11px 16px;
+    background: #fafbfc;
+    border-bottom: 1px solid #f0f0f0;
+}
+.d-table td { padding: 11px 16px; vertical-align: middle; font-size: 13px; }
+.d-table tbody tr { transition: background 0.12s; }
+.d-table tbody tr:hover { background: #f8f9fc; }
+.d-table tbody tr:last-child td { border-bottom: none; }
+
+/* Ligne badge */
+.ligne-badge {
+    font-weight: 700;
+    color: #111827;
+    font-size: 13px;
+}
+
+/* Montant */
+.montant-cell {
+    font-weight: 700;
+    color: var(--color-accent);
+    font-size: 13px;
+}
+
+/* Statut actif/inactif */
+.statut-actif {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 12px; padding: 3px 10px;
+    font-size: 11px; font-weight: 600;
+    background: #dcfce7; color: #166534;
+}
+.statut-inactif {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 12px; padding: 3px 10px;
+    font-size: 11px; font-weight: 600;
+    background: #fee2e2; color: #991b1b;
+}
+
+/* Boutons action */
+.btn-action {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    border: 1px solid #e5e7eb;
+    background: #fff; color: #6b7280;
+    transition: all 0.15s; text-decoration: none;
+}
+.btn-action:hover         { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.btn-action.edit:hover    { background: #fefce8; color: #92400e; border-color: #fde68a; }
+.btn-action.del:hover     { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+/* État vide */
+.empty-state { text-align: center; padding: 56px 20px; color: #9ca3af; }
+.empty-state i { font-size: 3rem; display: block; margin-bottom: 12px; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestion des Destinations</h2>
-        <a href="{% url 'destinations:destination_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nouvelle Destination
-        </a>
-    </div>
 
     {% if messages %}
         {% for message in messages %}
@@ -21,81 +163,127 @@
         {% endfor %}
     {% endif %}
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-10">
-                    <input type="text"
-                           name="q"
-                           class="form-control"
-                           placeholder="Rechercher par ville ou ligne..."
-                           value="{{ search_query }}">
+    <!-- ── Header ── -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h4><i class="bi bi-geo-alt me-2"></i>Destinations</h4>
+            <div class="d-flex gap-3 mt-3 flex-wrap">
+                <div class="header-stat">
+                    <div class="hs-val">{{ destinations|length }}</div>
+                    <div class="hs-lbl">Total</div>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i> Rechercher
-                    </button>
+                <div class="header-stat">
+                    <div class="hs-val">{{ destinations|length }}</div>
+                    <div class="hs-lbl">Affichées</div>
                 </div>
-            </form>
+            </div>
         </div>
+        <a href="{% url 'destinations:destination_create' %}" class="btn-header primary">
+            <i class="bi bi-plus-circle"></i> Nouvelle Destination
+        </a>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            {% if destinations %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Ligne</th>
-                                <th>Gare de départ</th>
-                                <th>Ville d'arrivée</th>
-                                <th>Prix (GNF)</th>
-                                <th>Date de création</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for destination in destinations %}
-                                <tr>
-                                    <td><strong>{{ destination.ligne.nom }}</strong></td>
-                                    <td>{{ destination.gare.nom }}</td>
-                                    <td>{{ destination.ville_arrivee }}</td>
-                                    <td class="text-end">{{ destination.montant|format_montant }} FCFA</td>
-                                    <td>{{ destination.date_creation|date:"d/m/Y" }}</td>
-                                    <td class="text-end">
-                                        <a href="{% url 'destinations:destination_update' destination.pk %}"
-                                           class="btn btn-sm btn-outline-primary"
-                                           title="Modifier">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <a href="{% url 'destinations:destination_delete' destination.pk %}"
-                                           class="btn btn-sm btn-outline-danger"
-                                           title="Supprimer">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+    <!-- ── Filtres ── -->
+    <div class="filter-zone">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-9">
+                <label class="form-label">Recherche</label>
+                <input type="text" name="q" class="form-control form-control-sm"
+                       placeholder="Rechercher par ville ou ligne..."
+                       value="{{ search_query }}">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-search me-1"></i> Rechercher
+                </button>
+                {% if search_query %}
+                <a href="{% url 'destinations:destination_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- ── Table ── -->
+    <div class="dest-card">
+        <div class="table-header">
+            <span><i class="bi bi-geo-alt me-2" style="color:var(--color-accent)"></i>Liste des destinations</span>
+            <span class="badge rounded-pill" style="background:#eef2ff;color:#4338ca;font-size:12px;font-weight:600">
+                {{ destinations|length }} destination{{ destinations|length|pluralize }}
+            </span>
+        </div>
+
+        {% if destinations %}
+        <div class="table-responsive">
+            <table class="table d-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Ligne</th>
+                        <th>Gare de départ</th>
+                        <th>Ville d'arrivée</th>
+                        <th class="text-end">Montant</th>
+                        <th>Statut</th>
+                        <th>Créée le</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for destination in destinations %}
+                    <tr>
+                        <td><span class="ligne-badge">{{ destination.ligne.nom }}</span></td>
+                        <td style="color:#6b7280;font-size:12px;">{{ destination.gare.nom }}</td>
+                        <td style="font-weight:600;">{{ destination.ville_arrivee }}</td>
+                        <td class="text-end"><span class="montant-cell">{{ destination.montant|format_montant }} FCFA</span></td>
+                        <td>
+                            {% if destination.active %}
+                                <span class="statut-actif"><i class="bi bi-check-circle"></i> Active</span>
+                            {% else %}
+                                <span class="statut-inactif"><i class="bi bi-x-circle"></i> Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:#9ca3af;font-size:12px;">{{ destination.date_creation|date:"d/m/Y" }}</td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex gap-1 justify-content-end">
+                                <a href="{% url 'destinations:destination_update' destination.pk %}"
+                                   class="btn-action edit" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'destinations:destination_delete' destination.pk %}"
+                                   class="btn-action del" title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-geo-alt text-muted"></i>
+            <p class="fw-semibold">
+                {% if search_query %}
+                    Aucune destination trouvée pour "{{ search_query }}"
+                {% else %}
+                    Aucune destination enregistrée
+                {% endif %}
+            </p>
+            {% if search_query %}
+            <a href="{% url 'destinations:destination_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                <i class="bi bi-x me-1"></i>Réinitialiser
+            </a>
             {% else %}
-                <div class="text-center py-5">
-                    <i class="bi bi-geo-alt" style="font-size: 3rem; color: var(--color-text-muted);"></i>
-                    <p class="mt-3 text-muted">
-                        {% if search_query %}
-                            Aucune destination trouvée pour "{{ search_query }}".
-                        {% else %}
-                            Aucune destination enregistrée.
-                        {% endif %}
-                    </p>
-                    <a href="{% url 'destinations:destination_create' %}" class="btn btn-primary mt-2">
-                        Créer la première destination
-                    </a>
-                </div>
+            <a href="{% url 'destinations:destination_create' %}" class="btn btn-sm btn-primary mt-2">
+                <i class="bi bi-plus-circle me-1"></i>Créer la première destination
+            </a>
             {% endif %}
         </div>
+        {% endif %}
+
     </div>
+
 </div>
 {% endblock %}
