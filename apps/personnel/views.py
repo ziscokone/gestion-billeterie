@@ -1,6 +1,10 @@
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
+from django.views import View
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404, redirect
 from django.db.models import Q
 from core.mixins import AdminRequiredMixin
 from .models import Utilisateur, Chauffeur, Convoyeur
@@ -32,12 +36,25 @@ class UtilisateurListView(AdminRequiredMixin, ListView):
         return queryset.select_related('gare').order_by('nom_complet')
 
     def get_context_data(self, **kwargs):
+        from django_otp import devices_for_user
+        from django.conf import settings
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('q', '')
         context['role_filtre']  = self.request.GET.get('role', 'tous')
         context['nb_total']     = Utilisateur.objects.count()
         context['nb_actifs']    = Utilisateur.objects.filter(actif=True).count()
         context['nb_inactifs']  = Utilisateur.objects.filter(actif=False).count()
+        roles_2fa = getattr(settings, 'ROLES_2FA_OBLIGATOIRE', [])
+        context['roles_2fa'] = roles_2fa
+        # Dictionnaire {user_id: 'active'|'inactive'|'none'}
+        statuts_2fa = {}
+        for u in context['utilisateurs']:
+            if u.role in roles_2fa:
+                a_device = bool(list(devices_for_user(u, confirmed=True)))
+                statuts_2fa[u.pk] = 'active' if a_device else 'inactive'
+            else:
+                statuts_2fa[u.pk] = 'none'
+        context['statuts_2fa'] = statuts_2fa
         return context
 
 
@@ -74,6 +91,30 @@ class UtilisateurDeleteView(AdminRequiredMixin, DeleteView):
     def form_valid(self, form):
         messages.success(self.request, 'Utilisateur supprimé avec succès.')
         return super().form_valid(form)
+
+
+class Reset2FAView(LoginRequiredMixin, View):
+    """Réinitialise la 2FA d'un utilisateur. Réservé aux super_admin."""
+
+    def post(self, request, pk):
+        if request.user.role != 'super_admin':
+            raise PermissionDenied
+
+        cible = get_object_or_404(Utilisateur, pk=pk)
+        self._supprimer_devices(cible)
+
+        if cible.pk == request.user.pk:
+            messages.success(request, f'Votre 2FA a été réinitialisée. Reconfigurez-la à votre prochaine connexion.')
+        else:
+            messages.success(request, f'La 2FA de {cible.nom_complet} a été réinitialisée avec succès.')
+
+        return redirect('personnel:utilisateur_list')
+
+    def _supprimer_devices(self, user):
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        from django_otp.plugins.otp_static.models import StaticDevice
+        TOTPDevice.objects.filter(user=user).delete()
+        StaticDevice.objects.filter(user=user).delete()
 
 
 # Vues pour les chauffeurs

@@ -97,9 +97,14 @@
     font-size: 13px; border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
     transition: all 0.15s; text-decoration: none;
   }
-  .btn-action:hover        { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-  .btn-action.edit:hover   { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
-  .btn-action.del:hover    { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+  .btn-action:hover         { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .btn-action.edit:hover    { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+  .btn-action.del:hover     { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+  .btn-action.reset2fa:hover{ background: #fff7ed; color: #ea580c; border-color: #fed7aa; }
+
+  /* Badges 2FA */
+  .badge-2fa-ok  { background: #dcfce7; color: #166534; border-radius: 10px; padding: 2px 8px; font-size: 10px; font-weight: 600; }
+  .badge-2fa-non { background: #fff7ed; color: #9a3412; border-radius: 10px; padding: 2px 8px; font-size: 10px; font-weight: 600; }
 
   /* État vide */
   .empty-state { text-align: center; padding: 56px 20px; color: #9ca3af; }
@@ -197,6 +202,7 @@
             <th>Rôle</th>
             <th>Gare</th>
             <th>Statut</th>
+            <th>2FA</th>
             <th class="text-end pe-4">Actions</th>
           </tr>
         </thead>
@@ -231,12 +237,36 @@
                 <span class="badge-inactif"><i class="bi bi-pause-circle me-1"></i>Inactif</span>
               {% endif %}
             </td>
+            <td>
+              {% with statut=statuts_2fa|get_item:user.pk %}
+                {% if statut == 'active' %}
+                  <span class="badge-2fa-ok"><i class="bi bi-shield-check me-1"></i>Activée</span>
+                {% elif statut == 'inactive' %}
+                  <span class="badge-2fa-non"><i class="bi bi-shield-exclamation me-1"></i>Non config.</span>
+                {% else %}
+                  <span class="text-muted" style="font-size:11px">—</span>
+                {% endif %}
+              {% endwith %}
+            </td>
             <td class="text-end pe-4">
               <div class="d-flex gap-2 justify-content-end">
                 <a href="{% url 'personnel:utilisateur_update' user.pk %}"
                    class="btn-action edit" title="Modifier">
                   <i class="bi bi-pencil"></i>
                 </a>
+                {% with statut2=statuts_2fa|get_item:user.pk %}
+                {% if request.user.role == 'super_admin' and statut2 == 'active' %}
+                  <button type="button"
+                          class="btn-action reset2fa"
+                          title="Réinitialiser la 2FA"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modal2fa"
+                          data-user-id="{{ user.pk }}"
+                          data-user-name="{{ user.nom_complet }}">
+                    <i class="bi bi-shield-x"></i>
+                  </button>
+                {% endif %}
+                {% endwith %}
                 <a href="{% url 'personnel:utilisateur_delete' user.pk %}"
                    class="btn-action del" title="Supprimer">
                   <i class="bi bi-trash"></i>
@@ -268,4 +298,51 @@
 
   </div>
 </div>
+
+<!-- Modal confirmation réinitialisation 2FA -->
+{% if request.user.role == 'super_admin' %}
+<div class="modal fade" id="modal2fa" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header" style="background: linear-gradient(135deg,#7f1d1d,#dc2626); color:white;">
+        <h5 class="modal-title">
+          <i class="bi bi-shield-x me-2"></i>Réinitialiser la 2FA
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-4">
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          Cette action supprime le dispositif 2FA de <strong id="modal2fa-nom"></strong>.
+          <br>L'utilisateur devra reconfigurer la 2FA à sa prochaine connexion.
+        </div>
+        <p class="text-muted mb-0" style="font-size:0.9rem;">
+          À utiliser uniquement si l'utilisateur a <strong>perdu son téléphone</strong>
+          ou <strong>change d'appareil</strong>.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <form id="form-reset2fa" method="post" action="">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-shield-x me-2"></i>Confirmer la réinitialisation
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('modal2fa').addEventListener('show.bs.modal', function(e) {
+    const btn = e.relatedTarget;
+    const userId = btn.getAttribute('data-user-id');
+    const userName = btn.getAttribute('data-user-name');
+    document.getElementById('modal2fa-nom').textContent = userName;
+    document.getElementById('form-reset2fa').action = '/personnel/utilisateurs/' + userId + '/reset-2fa/';
+  });
+</script>
+{% endif %}
+
 {% endblock %}
