@@ -1,12 +1,13 @@
 from django.urls import path
+from django.views.generic import RedirectView
 from django.contrib.auth import views as auth_views
 from . import views
 
 app_name = 'personnel'
 
 urlpatterns = [
-    # Authentification
-    path('login/', auth_views.LoginView.as_view(template_name='personnel/login.html'), name='login'),
+    # Redirection login vers two_factor (rétrocompatibilité des liens existants)
+    path('login/', RedirectView.as_view(pattern_name='two_factor:login', permanent=False), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
     # Utilisateurs

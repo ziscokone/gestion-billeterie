@@ -12,3 +12,11 @@ cloudinary>=1.36
 django-cloudinary-storage>=0.3
 openpyxl>=3.1.0
 reportlab>=4.0.0
+
+# Sécurité
+django-axes>=8.0
+django-two-factor-auth>=1.15
+qrcode[pil]>=7.4
+django_otp>=1.4
+django-auditlog>=3.0
+django-ratelimit>=4.1
