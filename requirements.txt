@@ -13,6 +13,9 @@ django-cloudinary-storage>=0.3
 openpyxl>=3.1.0
 reportlab>=4.0.0
 
+# Admin UI
+django-jazzmin>=3.0
+
 # Sécurité
 django-axes>=8.0
 django-two-factor-auth>=1.15

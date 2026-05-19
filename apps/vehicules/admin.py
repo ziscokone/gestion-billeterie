@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import ModeleVehicule, Vehicule, ReparationVehicule
+from .models import ModeleVehicule, Vehicule, TypeReparation, ReparationVehicule
+
+
+@admin.register(TypeReparation)
+class TypeReparationAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'description')
+    search_fields = ('nom',)
+    ordering = ('nom',)
 
 
 @admin.register(ModeleVehicule)

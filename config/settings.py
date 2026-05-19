@@ -26,6 +26,7 @@ if RENDER_EXTERNAL_HOSTNAME:
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -220,3 +221,179 @@ X_FRAME_OPTIONS = 'DENY'
 
 # ─── Rôles qui doivent utiliser la 2FA ──────────────────────────────────────
 ROLES_2FA_OBLIGATOIRE = ['pdg', 'super_admin', 'manager', 'chef_gare']
+
+
+# ─── Jazzmin (Admin UI) ──────────────────────────────────────────────────────
+JAZZMIN_SETTINGS = {
+    # Titre dans l'onglet navigateur
+    "site_title": "Admin Billetterie",
+
+    # Titre de la page d'en-tête
+    "site_header": "Gestion Billetterie",
+
+    # Titre du brand dans la sidebar
+    "site_brand": "Billetterie",
+
+    # Logo dans la sidebar (chemin relatif à STATIC_URL)
+    "site_logo": None,
+
+    # Logo sur la page de login
+    "login_logo": None,
+
+    # Icône du navigateur
+    "site_icon": None,
+
+    # Message de bienvenue sur la page de login
+    "welcome_sign": "Administration — Accès restreint",
+
+    # Texte du copyright en bas de page
+    "copyright": "Gestion Billetterie CI",
+
+    # Champ de recherche global : liste de modèles (app.Model)
+    "search_model": ["personnel.Utilisateur", "billets.Billet", "voyages.Voyage"],
+
+    # Afficher le champ de recherche en haut
+    "user_avatar": None,
+
+    # ── Barre supérieure ────────────────────────────────────────────────────
+    "topmenu_links": [
+        {"name": "Accueil Site", "url": "/", "new_window": False, "icon": "fas fa-home"},
+        {"name": "Voyages", "url": "/voyages/", "new_window": False, "icon": "fas fa-bus"},
+        {"model": "personnel.Utilisateur"},
+    ],
+
+    # ── Menu utilisateur (icône en haut à droite) ───────────────────────────
+    "usermenu_links": [
+        {"name": "Retour au site", "url": "/", "icon": "fas fa-home"},
+    ],
+
+    # ── Sidebar ─────────────────────────────────────────────────────────────
+    "show_sidebar": True,
+    "navigation_expanded": True,
+
+    # Apps à masquer dans la sidebar
+    "hide_apps": ["auth"],
+
+    # Modèles à masquer dans la sidebar
+    "hide_models": [],
+
+    # Ordre des apps dans la sidebar
+    "order_with_respect_to": [
+        "compagnie",
+        "gares",
+        "personnel",
+        "lignes",
+        "destinations",
+        "vehicules",
+        "programmes",
+        "voyages",
+        "billets",
+        "clients",
+        "comptabilite",
+        "axes",
+        "auditlog",
+        "django_otp",
+        "otp_totp",
+        "otp_static",
+        "two_factor",
+        "django_celery_beat",
+    ],
+
+    # Menu personnalisé (écrase l'ordre automatique si défini)
+    "custom_links": {
+        "billets": [{
+            "name": "Rapport Billets",
+            "url": "/comptabilite/",
+            "icon": "fas fa-chart-bar",
+        }],
+    },
+
+    # ── Icônes des modèles ───────────────────────────────────────────────────
+    "icons": {
+        # Icône par app (fallback)
+        "compagnie": "fas fa-building",
+        "gares": "fas fa-map-marker-alt",
+        "personnel": "fas fa-users",
+        "lignes": "fas fa-route",
+        "destinations": "fas fa-map-signs",
+        "vehicules": "fas fa-bus",
+        "programmes": "fas fa-calendar-alt",
+        "voyages": "fas fa-road",
+        "billets": "fas fa-ticket-alt",
+        "clients": "fas fa-user-friends",
+        "comptabilite": "fas fa-coins",
+        "axes": "fas fa-shield-alt",
+        "auditlog": "fas fa-history",
+
+        # Icône par modèle (app.Modele)
+        "compagnie.Compagnie": "fas fa-building",
+        "gares.Gare": "fas fa-map-marker-alt",
+        "personnel.Utilisateur": "fas fa-user-shield",
+        "personnel.Chauffeur": "fas fa-id-card",
+        "personnel.Convoyeur": "fas fa-user-tie",
+        "lignes.Ligne": "fas fa-route",
+        "destinations.Destination": "fas fa-map-pin",
+        "vehicules.Vehicule": "fas fa-bus-alt",
+        "vehicules.ModeleVehicule": "fas fa-cogs",
+        "vehicules.TypeReparation": "fas fa-tools",
+        "vehicules.ReparationVehicule": "fas fa-wrench",
+        "programmes.ProgrammeDepart": "fas fa-clock",
+        "voyages.Voyage": "fas fa-road",
+        "billets.Billet": "fas fa-ticket-alt",
+        "billets.HistoriqueReport": "fas fa-history",
+        "clients.Client": "fas fa-user-friends",
+        "comptabilite.TypeDepense": "fas fa-tags",
+        "comptabilite.Depense": "fas fa-money-bill-wave",
+        "auth.Group": "fas fa-layer-group",
+    },
+
+    # Utiliser les icônes définies ci-dessus
+    "default_icon_parents": "fas fa-folder",
+    "default_icon_children": "fas fa-circle",
+
+    # ── Comportement UI ─────────────────────────────────────────────────────
+    "related_modal_active": True,       # Popups pour les FK
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": False,      # Pas de CDN Google (offline ok)
+    "show_ui_builder": False,           # Masquer le builder en prod
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "vertical_tabs",
+    },
+    "language_chooser": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-success",
+    "accent": "accent-teal",
+    "navbar": "navbar-dark",
+    "no_navbar_border": True,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-success",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+    "actions_sticky_top": True,
+}

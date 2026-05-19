@@ -1,5 +1,15 @@
 from django.contrib import admin
-from .models import Billet
+from .models import Billet, HistoriqueReport
+
+
+@admin.register(HistoriqueReport)
+class HistoriqueReportAdmin(admin.ModelAdmin):
+    list_display = ('ancien_billet', 'ancien_voyage', 'nouveau_voyage', 'guichetier', 'date_report')
+    list_filter = ('date_report',)
+    search_fields = ('ancien_billet__numero', 'nouveau_billet__numero')
+    ordering = ('-date_report',)
+    readonly_fields = ('ancien_billet', 'nouveau_billet', 'ancien_voyage', 'nouveau_voyage',
+                       'ancien_siege', 'nouveau_siege', 'guichetier', 'motif', 'date_report')
 
 
 @admin.register(Billet)
