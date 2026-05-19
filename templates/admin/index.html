@@ -1,0 +1,421 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static jazzmin humanize admin_stats %}
+{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block content_title %} {% trans 'Dashboard' %} {% endblock %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% trans 'Home' %}</a></li>
+    <li class="breadcrumb-item active">{% trans 'Dashboard' %}</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+{% get_dashboard_stats as stats %}
+
+{% if stats %}
+
+{# ═══════════════════════════════════════════════════════ #}
+{#  LIGNE 1 — 4 KPI cards                                 #}
+{# ═══════════════════════════════════════════════════════ #}
+<div class="row mb-3">
+
+    {# — Billets du jour — #}
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card h-100" style="border-left: 4px solid #28a745;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: .72rem; letter-spacing: .05em;">
+                            Billets aujourd'hui
+                        </div>
+                        <div class="h2 mb-0 fw-bold text-success">{{ stats.billets_jour }}</div>
+                        <div class="text-muted small mt-1">
+                            <i class="fas fa-coins me-1"></i>
+                            {{ stats.recettes_jour|intcomma }} FCFA
+                        </div>
+                    </div>
+                    <div class="text-success opacity-50">
+                        <i class="fas fa-ticket-alt fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# — Recettes du mois — #}
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card h-100" style="border-left: 4px solid #007bff;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: .72rem; letter-spacing: .05em;">
+                            Recettes du mois
+                        </div>
+                        <div class="h2 mb-0 fw-bold text-primary">{{ stats.recettes_mois|intcomma }}</div>
+                        <div class="text-muted small mt-1">
+                            <i class="fas fa-ticket-alt me-1"></i>
+                            {{ stats.billets_mois }} billet{{ stats.billets_mois|pluralize }}
+                        </div>
+                    </div>
+                    <div class="text-primary opacity-50">
+                        <i class="fas fa-chart-line fa-3x"></i>
+                    </div>
+                </div>
+                <div class="text-muted small mt-1 fw-bold">FCFA</div>
+            </div>
+        </div>
+    </div>
+
+    {# — Voyages du jour — #}
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card h-100" style="border-left: 4px solid #17a2b8;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: .72rem; letter-spacing: .05em;">
+                            Voyages aujourd'hui
+                        </div>
+                        <div class="h2 mb-0 fw-bold text-info">{{ stats.voyages_total }}</div>
+                        <div class="text-muted small mt-1">
+                            <span class="badge bg-warning text-dark me-1">{{ stats.voyages_programme }} prog.</span>
+                            <span class="badge bg-success me-1">{{ stats.voyages_en_cours }} en cours</span>
+                        </div>
+                    </div>
+                    <div class="text-info opacity-50">
+                        <i class="fas fa-bus fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# — Alertes documents — #}
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card h-100" style="border-left: 4px solid {% if stats.docs_expires > 0 %}#dc3545{% elif stats.docs_bientot > 0 %}#ffc107{% else %}#28a745{% endif %};">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: .72rem; letter-spacing: .05em;">
+                            Alertes véhicules
+                        </div>
+                        <div class="h2 mb-0 fw-bold {% if stats.docs_expires > 0 %}text-danger{% elif stats.docs_bientot > 0 %}text-warning{% else %}text-success{% endif %}">
+                            {{ stats.docs_expires|add:stats.docs_bientot }}
+                        </div>
+                        <div class="text-muted small mt-1">
+                            {% if stats.docs_expires > 0 %}
+                                <span class="badge bg-danger me-1">{{ stats.docs_expires }} expirés</span>
+                            {% endif %}
+                            {% if stats.docs_bientot > 0 %}
+                                <span class="badge bg-warning text-dark">{{ stats.docs_bientot }} bientôt</span>
+                            {% endif %}
+                            {% if stats.docs_expires == 0 and stats.docs_bientot == 0 %}
+                                <span class="text-success"><i class="fas fa-check-circle me-1"></i>Tout est OK</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="{% if stats.docs_expires > 0 %}text-danger{% elif stats.docs_bientot > 0 %}text-warning{% else %}text-success{% endif %} opacity-50">
+                        <i class="fas fa-exclamation-triangle fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>{# /row KPI #}
+
+
+{# ═══════════════════════════════════════════════════════ #}
+{#  LIGNE 2 — 3 cards de détail                           #}
+{# ═══════════════════════════════════════════════════════ #}
+<div class="row mb-4">
+
+    {# — Voyages du jour (détail) — #}
+    <div class="col-xl-4 col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-road me-2 text-info"></i>
+                <strong>Voyages du {{ stats.today|date:"d/m/Y" }}</strong>
+                <a href="{% url 'admin:voyages_voyage_changelist' %}" class="btn btn-sm btn-outline-info ms-auto">Voir tout</a>
+            </div>
+            <div class="card-body">
+                {% if stats.voyages_total == 0 %}
+                    <p class="text-muted text-center my-3">
+                        <i class="fas fa-bus fa-2x d-block mb-2 opacity-25"></i>
+                        Aucun voyage aujourd'hui
+                    </p>
+                {% else %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="fas fa-clock text-warning me-1"></i> Programmés</span>
+                            <span class="badge bg-warning text-dark">{{ stats.voyages_programme }}</span>
+                        </div>
+                        {% if stats.voyages_total > 0 %}
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-warning" style="width: {% widthratio stats.voyages_programme stats.voyages_total 100 %}%"></div>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="fas fa-play-circle text-success me-1"></i> En cours</span>
+                            <span class="badge bg-success">{{ stats.voyages_en_cours }}</span>
+                        </div>
+                        {% if stats.voyages_total > 0 %}
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-success" style="width: {% widthratio stats.voyages_en_cours stats.voyages_total 100 %}%"></div>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="fas fa-check-circle text-secondary me-1"></i> Terminés</span>
+                            <span class="badge bg-secondary">{{ stats.voyages_termine }}</span>
+                        </div>
+                        {% if stats.voyages_total > 0 %}
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-secondary" style="width: {% widthratio stats.voyages_termine stats.voyages_total 100 %}%"></div>
+                        </div>
+                        {% endif %}
+
+                        {% if stats.voyages_annule > 0 %}
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="fas fa-times-circle text-danger me-1"></i> Annulés</span>
+                            <span class="badge bg-danger">{{ stats.voyages_annule }}</span>
+                        </div>
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-danger" style="width: {% widthratio stats.voyages_annule stats.voyages_total 100 %}%"></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-center text-muted small">
+                        Total : <strong>{{ stats.voyages_total }} voyage{{ stats.voyages_total|pluralize }}</strong>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# — Véhicules & Alertes — #}
+    <div class="col-xl-4 col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-bus me-2 text-warning"></i>
+                <strong>Véhicules & Documents</strong>
+                <a href="{% url 'admin:vehicules_vehicule_changelist' %}" class="btn btn-sm btn-outline-warning ms-auto">Voir tout</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Véhicules actifs</small>
+                    <span class="badge bg-success">{{ stats.vehicules_total }}</span>
+                </div>
+                {% if stats.alertes_detail %}
+                    <div style="max-height: 220px; overflow-y: auto;">
+                        {% for alerte in stats.alertes_detail %}
+                        <div class="px-3 py-2 border-bottom">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-bus me-2 text-{% if alerte.niveau == 'danger' %}danger{% else %}warning{% endif %}"></i>
+                                <strong class="small">{{ alerte.vehicule }}</strong>
+                                <span class="badge bg-{{ alerte.niveau }} ms-auto">
+                                    {% if alerte.niveau == 'danger' %}Expiré{% else %}Bientôt{% endif %}
+                                </span>
+                            </div>
+                            {% for p in alerte.problemes %}
+                            <div class="text-muted small ps-4">
+                                <i class="fas fa-exclamation-circle text-{{ alerte.niveau }} me-1"></i>{{ p }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-success py-4">
+                        <i class="fas fa-check-circle fa-2x d-block mb-2"></i>
+                        <span class="small fw-bold">Tous les documents sont à jour</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# — Personnel actif — #}
+    <div class="col-xl-4 col-md-12 mb-3">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-users me-2 text-success"></i>
+                <strong>Personnel actif</strong>
+                <a href="{% url 'admin:personnel_utilisateur_changelist' %}" class="btn btn-sm btn-outline-success ms-auto">Voir tout</a>
+            </div>
+            <div class="card-body">
+                <div class="row text-center g-3">
+                    <div class="col-4">
+                        <div class="p-3 rounded" style="background: #e8f5e9;">
+                            <div class="h3 mb-0 fw-bold text-success">{{ stats.utilisateurs_actifs }}</div>
+                            <div class="small text-muted mt-1">
+                                <i class="fas fa-user-shield d-block mb-1"></i>
+                                Utilisateurs
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 rounded" style="background: #e3f2fd;">
+                            <div class="h3 mb-0 fw-bold text-primary">{{ stats.chauffeurs_actifs }}</div>
+                            <div class="small text-muted mt-1">
+                                <i class="fas fa-id-card d-block mb-1"></i>
+                                Chauffeurs
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 rounded" style="background: #fff3e0;">
+                            <div class="h3 mb-0 fw-bold text-warning">{{ stats.convoyeurs_actifs }}</div>
+                            <div class="small text-muted mt-1">
+                                <i class="fas fa-user-tie d-block mb-1"></i>
+                                Convoyeurs
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+                <div class="text-center">
+                    <span class="text-muted small">Total équipe :</span>
+                    <span class="fw-bold ms-1">
+                        {{ stats.utilisateurs_actifs|add:stats.chauffeurs_actifs|add:stats.convoyeurs_actifs }} personnes
+                    </span>
+                </div>
+                <div class="row mt-3 g-2">
+                    <div class="col-6">
+                        <a href="{% url 'admin:personnel_chauffeur_changelist' %}" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="fas fa-id-card me-1"></i>Chauffeurs
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'admin:personnel_convoyeur_changelist' %}" class="btn btn-sm btn-outline-warning w-100">
+                            <i class="fas fa-user-tie me-1"></i>Convoyeurs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>{# /row détail #}
+
+{% endif %}{# /if stats #}
+
+
+{# ═══════════════════════════════════════════════════════ #}
+{#  LIGNE 3 — App list + Actions récentes (Jazzmin style) #}
+{# ═══════════════════════════════════════════════════════ #}
+{% get_side_menu using="app_list" as dashboard_list %}
+{% if dashboard_list %}
+    {% widthratio dashboard_list|length 2 1 as middle %}
+{% endif %}
+
+<div class="col-lg-9 col-12 ps-0">
+    <div class="row">
+        <div class="col-md-6 col-sm-12">
+            {% for app in dashboard_list %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="m-0">{{ app.name }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tbody>
+                            {% for model in app.models %}
+                                <tr>
+                                    <td>
+                                        {% if model.url %}<a href="{{ model.url }}">{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group float-end">
+                                            {% if model.add_url %}
+                                                <a href="{{ model.add_url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.success }} addlink">{% trans 'Add' %}</a>
+                                            {% endif %}
+                                            {% if model.url %}
+                                                {% if model.view_only %}
+                                                    <a href="{{ model.url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.info }} viewlink">{% trans 'View' %}</a>
+                                                {% else %}
+                                                    <a href="{{ model.url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.info }} changelink">{% if model.custom %}{% trans 'Go' %}{% else %}{% trans 'Change' %}{% endif %}</a>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% if forloop.counter == middle|add:"0" %}
+                </div>
+                <div class="col-md-6 col-sm-12">
+                {% endif %}
+
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="col-lg-3 col-12">
+    <div id="content-related">
+        <div class="module" id="recent-actions-module">
+            <h4 class="mb-3">{% trans 'Recent actions' %}</h4>
+            {% load log %}
+            {% get_admin_log 8 as admin_log for_user user %}
+            {% if not admin_log %}
+                <p class="text-muted">{% trans 'None available' %}</p>
+            {% else %}
+                <div class="timeline">
+                    {% for entry in admin_log %}
+                        <div>
+                            {% if entry.is_change %}
+                                <i class="fas fa-edit bg-gray text-xs"></i>
+                            {% elif entry.is_deletion %}
+                                <i class="fas fa-trash bg-danger text-xs"></i>
+                            {% elif entry.is_addition %}
+                                <i class="fas fa-plus-circle bg-success text-xs"></i>
+                            {% endif %}
+                            <div class="timeline-item">
+                                <span class="time"><i class="fas fa-clock"></i> {% blocktrans with timesince=entry.action_time|timesince %}{{ timesince }} ago{% endblocktrans %}</span>
+                                <h3 class="timeline-header no-border">
+                                    {% if entry.is_deletion or not entry.get_admin_url %}
+                                        {{ entry.object_repr }}
+                                    {% else %}
+                                        <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                                    {% endif %}
+                                    {% if entry.model %}
+                                        <span class="mini quiet">
+                                            {% filter capfirst %}{{ entry.model }}{% endfilter %}
+                                        </span>
+                                    {% endif %}
+                                </h3>
+                                {% if not entry.is_deletion %}
+                                    <div class="timeline-body">
+                                        {% if entry.is_addition %}
+                                            {{ entry }}
+                                        {% else %}
+                                            <ul style="list-style: none; padding: 0;">
+                                                {% action_message_to_list entry as action_message_list %}
+                                                {% for action_message in action_message_list %}
+                                                    <li>{{ action_message.msg|style_bold_first_word }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <div><i class="fa fa-clock bg-gray"></i></div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
