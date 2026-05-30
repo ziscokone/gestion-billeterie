@@ -220,7 +220,7 @@ if not DEBUG:
 X_FRAME_OPTIONS = 'DENY'
 
 # ─── Rôles qui doivent utiliser la 2FA ──────────────────────────────────────
-ROLES_2FA_OBLIGATOIRE = ['pdg', 'super_admin', 'manager', 'chef_gare']
+ROLES_2FA_OBLIGATOIRE = ['super_admin', 'manager', 'chef_gare']
 
 
 # ─── Jazzmin (Admin UI) ──────────────────────────────────────────────────────
